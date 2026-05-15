@@ -151,7 +151,7 @@ def _format_teams_message(tenders: List[Tender], run_date: datetime) -> dict:
         score_emoji = "🟢" if t.score >= 7 else "🟡" if t.score >= 4 else "🔴"
         services  = ", ".join(
             s.replace("Service 0", "S").split(":")[0]
-            for s in (t.matched_scopes or [])
+            for s in (t.all_matched_scopes or t.matched_scopes or [])
         ) or "General"
         value     = t.value if t.value != "Value not stated" else "TBC"
         deadline  = urgency or (t.deadline.strftime("%d %b %Y") if t.deadline else "Not stated")
@@ -252,7 +252,7 @@ def _format_email_html(tenders: List[Tender], run_date: datetime) -> str:
         )
         score_color = "#00c853" if t.score >= 7 else "#f9a825" if t.score >= 4 else "#e53935"
         services = "<br>".join(
-            f"• {s}" for s in (t.matched_scopes or ["General"])
+            f"• {s}" for s in (t.all_matched_scopes or t.matched_scopes or ["General"])
         )
         rows += f"""
         <tr style="border-bottom:1px solid #eee">

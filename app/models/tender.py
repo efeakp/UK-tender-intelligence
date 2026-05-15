@@ -75,10 +75,11 @@ class Tender(BaseModel):
     nordic_eligible:   bool = False       # True if NE is registered on this framework
 
     # Scoring — populated by scorer service
-    score:            int        = 0
-    score_label:      ScoreLabel = ScoreLabel.WEAK
-    matched_keywords: List[str]  = Field(default_factory=list)
-    matched_scopes:   List[str]      = Field(default_factory=list)  # service scope labels
+    score:              int        = 0
+    score_label:        ScoreLabel = ScoreLabel.WEAK
+    matched_keywords:   List[str]  = Field(default_factory=list)
+    matched_scopes:     List[str]  = Field(default_factory=list)
+    all_matched_scopes: List[str]  = Field(default_factory=list)
 
     # Procurement Act 2023 notice intelligence
     notice_type:      str            = Field(default="",   description="UK notice type: UK1/UK2/UK3/UK4/UK5/UK6 etc.")

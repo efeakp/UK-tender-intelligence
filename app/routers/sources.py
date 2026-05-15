@@ -10,6 +10,8 @@ from app.dependencies import (
     CACHE_KEY_TENDERS,
     CACHE_KEY_FAT_META,
     CACHE_KEY_CF_META,
+    CACHE_KEY_S2W_META,
+    CACHE_KEY_PCS_META,
     get_source_meta,
 )
 from app.models.tender import SourcesResponse, SourceStatus
@@ -21,10 +23,11 @@ router = APIRouter(prefix="/sources", tags=["Sources"])
 @router.get("", response_model=SourcesResponse, summary="Source health and stats")
 async def get_sources():
     fat_meta = get_source_meta(CACHE_KEY_FAT_META)
-    cf_meta = get_source_meta(CACHE_KEY_CF_META)
+    cf_meta  = get_source_meta(CACHE_KEY_CF_META)
+    s2w_meta = get_source_meta(CACHE_KEY_S2W_META)
+    pcs_meta = get_source_meta(CACHE_KEY_PCS_META)
 
     tenders = cache.get(CACHE_KEY_TENDERS) or []
-    total_cached = len(tenders)
 
     return SourcesResponse(
         sources=[
@@ -42,8 +45,22 @@ async def get_sources():
                 tender_count=cf_meta.tender_count,
                 error=cf_meta.error,
             ),
+            SourceStatus(
+                name="Sell2Wales",
+                healthy=s2w_meta.healthy,
+                last_fetched=s2w_meta.last_fetched,
+                tender_count=s2w_meta.tender_count,
+                error=s2w_meta.error,
+            ),
+            SourceStatus(
+                name="Public Contracts Scotland",
+                healthy=pcs_meta.healthy,
+                last_fetched=pcs_meta.last_fetched,
+                tender_count=pcs_meta.tender_count,
+                error=pcs_meta.error,
+            ),
         ],
-        total_cached=total_cached,
+        total_cached=len(tenders),
         cache_ttl_minutes=settings.cache_ttl_minutes,
         next_scheduled_refresh=next_run_time(),
     )

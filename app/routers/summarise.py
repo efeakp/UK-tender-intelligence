@@ -15,13 +15,10 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 from app.dependencies import cache, CACHE_KEY_TENDERS
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/tenders", tags=["AI"])
-
-# Ollama runs locally — no API key required
-OLLAMA_API_URL = "http://localhost:11434/api/chat"
-OLLAMA_MODEL   = "gemma3:4b"
 
 NORDIC_ENERGY_CONTEXT = """
 Nordic Energy is a UK energy consultancy delivering four core services:
@@ -126,12 +123,13 @@ async def summarise_tender(tender_id: str):
     )
 
     try:
+        ollama_url = f"{settings.ollama_base_url}/api/chat"
         async with httpx.AsyncClient(timeout=60.0) as client:
             resp = await client.post(
-                OLLAMA_API_URL,
+                ollama_url,
                 headers={"Content-Type": "application/json"},
                 json={
-                    "model":  OLLAMA_MODEL,
+                    "model":  settings.ollama_model,
                     "stream": False,
                     "messages": [{"role": "user", "content": prompt}],
                     "options": {"temperature": 0.1},
@@ -174,7 +172,10 @@ async def summarise_tender(tender_id: str):
         logger.error("Ollama API error: %s", e)
         raise HTTPException(status_code=502, detail=f"Ollama error: {e.response.status_code}. Is Ollama running? Run: ollama serve")
     except httpx.ConnectError:
-        raise HTTPException(status_code=503, detail="Cannot connect to Ollama. Make sure it is running: ollama serve")
+        raise HTTPException(
+            status_code=503,
+            detail=f"Cannot connect to Ollama at {settings.ollama_base_url}. Make sure it is running: ollama serve",
+        )
     except Exception as e:
         logger.error("Summarisation failed for %s: %s", tender_id, e)
         raise HTTPException(status_code=500, detail=f"Summarisation failed: {e}")

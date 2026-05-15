@@ -595,8 +595,8 @@ def score_tender(tender: Tender) -> Tender:
         s.value if hasattr(s, "value") else s
         for s in matched_scopes if s in _ALL_SCOPES
     ]
-    tender.score_label      = _label(tender.score)
-    tender.__dict__["all_matched_scopes"] = tender.matched_scopes[:]
+    tender.score_label        = _label(tender.score)
+    tender.all_matched_scopes = tender.matched_scopes[:]
 
     # Framework tagging
     fw = tag_tender(tender.title, tender.description)

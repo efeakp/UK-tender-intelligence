@@ -40,6 +40,7 @@ KEY INSIGHT from Appendix B:
   All other planning notices are classified as Future Opportunity.
 """
 
+import asyncio
 import logging
 import re
 from datetime import datetime, timezone, timedelta
@@ -49,6 +50,9 @@ import httpx
 
 from app.config import settings
 from app.models.tender import Tender, TenderSource
+
+CF_MAX_RETRIES    = 3
+CF_RETRY_BACKOFF  = 60  # seconds; multiplied by retry_count on each attempt
 
 logger = logging.getLogger(__name__)
 
@@ -187,44 +191,72 @@ async def fetch_tenders(
             "page":    page,
         }
 
-        try:
-            resp = await client.post(
-                settings.cf_base_url,
-                json=payload,
-                headers={
-                    "Content-Type": "application/json",
-                    "Accept":       "application/json",
-                },
-                timeout=30.0,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        fetched     = False
+        retry_count = 0
 
-            max_page = int(data.get("maxPage", 1))
-            releases = data.get("releases", [])
+        while not fetched and retry_count <= CF_MAX_RETRIES:
+            try:
+                resp = await client.post(
+                    settings.cf_base_url,
+                    json=payload,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Accept":       "application/json",
+                    },
+                    timeout=30.0,
+                )
+                resp.raise_for_status()
+                data = resp.json()
 
-            if not releases:
+                max_page = int(data.get("maxPage", 1))
+                releases = data.get("releases", [])
+
+                if not releases:
+                    max_page = 0  # signal outer loop to stop
+                    fetched  = True
+                    break
+
+                for release in releases:
+                    ocid = release.get("ocid", "")
+                    if ocid and ocid not in seen_ocids:
+                        tender = _parse_ocds_release(release)
+                        if tender:
+                            tenders.append(tender)
+                            seen_ocids.add(ocid)
+
+                logger.debug("CF page %d/%d — %d releases", page, max_page, len(releases))
+                page    += 1
+                fetched  = True
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429:
+                    retry_count += 1
+                    if retry_count > CF_MAX_RETRIES:
+                        logger.error("CF rate-limited — exceeded %d retries on page %d, stopping", CF_MAX_RETRIES, page)
+                        max_page = 0
+                        break
+                    wait_s = int(e.response.headers.get("Retry-After", CF_RETRY_BACKOFF * retry_count))
+                    logger.warning(
+                        "CF rate-limited page %d — backoff %ds (attempt %d/%d)",
+                        page, wait_s, retry_count, CF_MAX_RETRIES,
+                    )
+                    await asyncio.sleep(wait_s)
+                else:
+                    logger.warning("CF HTTP error on page %d: %s", page, e)
+                    max_page = 0
+                    break
+
+            except httpx.RequestError as e:
+                logger.warning("CF request error on page %d: %s", page, e)
+                max_page = 0
                 break
 
-            for release in releases:
-                ocid = release.get("ocid", "")
-                if ocid and ocid not in seen_ocids:
-                    tender = _parse_ocds_release(release)
-                    if tender:
-                        tenders.append(tender)
-                        seen_ocids.add(ocid)
+            except Exception as e:
+                logger.error("Unexpected CF error on page %d: %s", page, e, exc_info=True)
+                max_page = 0
+                break
 
-            logger.debug("CF page %d/%d — %d releases", page, max_page, len(releases))
-            page += 1
-
-        except httpx.HTTPStatusError as e:
-            logger.warning("CF HTTP error on page %d: %s", page, e)
-            break
-        except httpx.RequestError as e:
-            logger.warning("CF request error on page %d: %s", page, e)
-            break
-        except Exception as e:
-            logger.error("Unexpected CF error on page %d: %s", page, e, exc_info=True)
+        if not fetched:
             break
 
     from collections import Counter

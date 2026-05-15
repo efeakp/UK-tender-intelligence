@@ -56,10 +56,10 @@ class Settings(BaseSettings):
     # Base URL hardcoded in app/services/public_contracts_scotland.py
 
     # ── AI Summarisation (Ollama — local, free) ───────────────────────────────
-    # Model: gemma3:4b running via Ollama at http://localhost:11434
-    # No API key needed — runs entirely on your machine.
-    # Start Ollama with: ollama serve
-    # Model configured in app/routers/summarise.py (OLLAMA_MODEL = "gemma3:4b")
+    # Model runs locally via Ollama. No API key required.
+    # Start with: ollama serve
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model:    str = "gemma3:4b"
 
     # ── Daily Digest (Teams + email) ─────────────────────────────────────────
     # Runs at 08:00 UTC (09:00 BST) daily via scheduler.
