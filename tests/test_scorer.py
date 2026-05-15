@@ -28,7 +28,7 @@ class TestScoreTender:
         result = score_tender(t)
         assert result.score >= 7
         assert result.score_label == ScoreLabel.STRONG
-        assert ScopeTag.HEAT_NETWORKS in result.matched_scopes
+        assert ScopeTag.OPTIMISATION.value in result.matched_scopes
 
     def test_renewables_match(self):
         t = make_tender(
@@ -36,8 +36,8 @@ class TestScoreTender:
             "Technical advisory services for offshore wind asset performance",
         )
         result = score_tender(t)
-        assert result.score >= 4
-        assert ScopeTag.RENEWABLES in result.matched_scopes
+        assert result.score >= 3  # "offshore wind" multi-word in title = 3 pts
+        assert ScopeTag.OPPORTUNITY_ID.value in result.matched_scopes
 
     def test_consulting_match(self):
         t = make_tender(
@@ -46,7 +46,7 @@ class TestScoreTender:
         )
         result = score_tender(t)
         assert result.score >= 4
-        assert ScopeTag.CONSULTING in result.matched_scopes
+        assert ScopeTag.BUSINESS_CASE.value in result.matched_scopes
 
     def test_irrelevant_tender_low_score(self):
         t = make_tender(

@@ -151,3 +151,7 @@ def _jaccard(a: set, b: set) -> float:
     if not a or not b:
         return 0.0
     return len(a & b) / len(a | b)
+
+
+def _similarity(a: str, b: str) -> float:
+    return _jaccard(set(a.split()), set(b.split()))

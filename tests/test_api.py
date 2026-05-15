@@ -30,7 +30,7 @@ def _sample_tenders():
             score=8,
             score_label=ScoreLabel.STRONG,
             matched_keywords=["heat network", "district heating", "heat pump"],
-            matched_scopes=[ScopeTag.HEAT_NETWORKS],
+            matched_scopes=[ScopeTag.OPTIMISATION.value],
         ),
         Tender(
             id="CF-001",
@@ -46,7 +46,7 @@ def _sample_tenders():
             score=6,
             score_label=ScoreLabel.LIKELY,
             matched_keywords=["solar pv", "battery storage"],
-            matched_scopes=[ScopeTag.RENEWABLES],
+            matched_scopes=[ScopeTag.OPPORTUNITY_ID.value],
         ),
         Tender(
             id="CF-002",
@@ -122,7 +122,8 @@ class TestListTenders:
         assert all(t["source"] == "Contracts Finder" for t in tenders)
 
     def test_filter_by_scope(self, client):
-        r = client.get("/tenders?min_score=0&scope=Heat+networks+%2F+district+energy")
+        scope = ScopeTag.OPTIMISATION.value  # "Service 03: Energy System Optimisation"
+        r = client.get(f"/tenders?min_score=0&scope={scope}")
         tenders = r.json()["tenders"]
         assert len(tenders) == 1
         assert tenders[0]["id"] == "FAT-001"

@@ -115,9 +115,12 @@ class TestParseOcdsRelease:
         assert "Z99" not in result.cpv_codes
 
     def test_url_constructed_from_ocid(self):
-        result = _parse_ocds_release(tender_release())
+        # Real CF releases always have a release.id — use one to exercise the
+        # version-suffix-stripping logic (format: "{guid}-{version_number}")
+        release = tender_release({"id": "abc12345-896514"})
+        result = _parse_ocds_release(release)
         assert "contractsfinder.service.gov.uk/Notice/" in result.url
-        assert "ocds-b5fd17-" not in result.url  # prefix stripped
+        assert "ocds-b5fd17-" not in result.url  # ocid prefix absent from URL
 
     def test_missing_tender_block_returns_none(self):
         release = {"ocid": "ocds-b5fd17-xyz", "date": "2025-04-01", "tag": ["tender"]}
