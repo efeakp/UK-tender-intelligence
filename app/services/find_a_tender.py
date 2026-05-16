@@ -481,6 +481,21 @@ def _parse_fat_release(release: dict, stage_hint: str = "") -> Optional[Tender]:
         except (TypeError, ValueError):
             value_amount = None
 
+        lots = tender_block.get("lots", [])
+        lot_count = len(lots)
+        if value_amount is None and lots:
+            lot_amounts = []
+            for lot in lots:
+                la = lot.get("value", {}).get("amount")
+                try:
+                    if la is not None:
+                        lot_amounts.append(float(la))
+                except (TypeError, ValueError):
+                    pass
+            if lot_amounts:
+                value_amount = sum(lot_amounts)
+                currency = lots[0].get("value", {}).get("currency", "GBP")
+
         value_str = f"£{value_amount:,.0f}" if value_amount else "Value not stated"
 
         # Dates
@@ -574,6 +589,7 @@ def _parse_fat_release(release: dict, stage_hint: str = "") -> Optional[Tender]:
             ocid=ocid or "",
             nuts_codes=nuts_codes,
             future_notice_date=future_notice_date,
+            lot_count=lot_count,
         )
         return tender_obj
 
@@ -619,6 +635,92 @@ async def fetch_notice_by_id(notice_id: str) -> Optional[Tender]:
                 continue
     logger.warning("Direct fetch: notice %s not found on any endpoint", notice_id)
     return None
+
+
+async def fetch_record_by_ocid(ocid: str) -> Optional[dict]:
+    """
+    Fetch the full procurement lifecycle from FaT's ocdsRecordPackages endpoint.
+    Returns a dict suitable for constructing a ProcurementRecord, or None on failure.
+    """
+    from app.models.tender import NoticeEntry
+
+    url = f"https://www.find-tender.service.gov.uk/api/1.0/ocdsRecordPackages/{ocid}"
+    headers = {"Accept": "application/json"}
+    if settings.fat_api_key:
+        headers["Authorization"] = f"Bearer {settings.fat_api_key}"
+
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        try:
+            resp = await client.get(url, headers=headers, timeout=30.0)
+            resp.raise_for_status()
+            data = resp.json()
+            records = data.get("records", [])
+            if not records:
+                return None
+            record = records[0]
+            compiled = record.get("compiledRelease", {})
+            releases = record.get("releases", [])
+
+            tender_block = compiled.get("tender", {})
+            buyer = compiled.get("buyer", {})
+            awards = compiled.get("awards", [])
+
+            title = tender_block.get("title") or compiled.get("description", "Unknown")
+            authority = buyer.get("name", "Unknown Authority")
+            current_status = tender_block.get("status", "unknown")
+
+            value_amount = None
+            if awards:
+                av = awards[0].get("value", {})
+                value_amount = av.get("amount")
+            if value_amount is None:
+                tv = tender_block.get("value", {})
+                value_amount = tv.get("amount")
+            current_value = f"£{float(value_amount):,.0f}" if value_amount else None
+
+            lots = tender_block.get("lots", [])
+            lot_count = len(lots)
+
+            notices = []
+            for rel in releases:
+                rel_id = rel.get("id", "")
+                uk_type = _extract_uk_notice_type(rel)
+                rel_date = _parse_dt(rel.get("date") or rel.get("publishedDate"))
+                rel_tag = rel.get("tag", [])
+                planning_docs = rel.get("planning", {}).get("documents", [])
+                notice_url_id = planning_docs[-1].get("id", rel_id) if planning_docs else rel_id
+                rel_url = f"https://www.find-tender.service.gov.uk/Notice/{notice_url_id}"
+                rel_title = rel.get("tender", {}).get("title") or rel.get("description", "Notice")
+
+                notices.append(NoticeEntry(
+                    notice_id=rel_id,
+                    notice_type=uk_type or "",
+                    date=rel_date,
+                    tag=rel_tag,
+                    url=rel_url,
+                    title=rel_title,
+                ))
+
+            min_dt = datetime.min.replace(tzinfo=timezone.utc)
+            notices.sort(key=lambda n: n.date or min_dt)
+
+            return {
+                "ocid": ocid,
+                "title": title,
+                "authority": authority,
+                "current_status": current_status,
+                "current_value": current_value,
+                "lot_count": lot_count,
+                "notices": notices,
+                "source": "Find a Tender",
+            }
+
+        except httpx.HTTPStatusError as e:
+            logger.warning("FaT record fetch error for OCID %s: %s", ocid, e)
+            return None
+        except Exception as e:
+            logger.warning("Unexpected error fetching FaT record for OCID %s: %s", ocid, e)
+            return None
 
 
 def _parse_dt(value: Optional[str]) -> Optional[datetime]:

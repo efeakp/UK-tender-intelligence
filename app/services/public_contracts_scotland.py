@@ -231,6 +231,21 @@ def _parse_release(release: dict, category: str) -> Optional[Tender]:
         except (TypeError, ValueError):
             value_amount = None
 
+        lots = tender_block.get("lots", [])
+        lot_count = len(lots)
+        if value_amount is None and lots:
+            lot_amounts = []
+            for lot in lots:
+                la = lot.get("value", {}).get("amount")
+                try:
+                    if la is not None:
+                        lot_amounts.append(float(la))
+                except (TypeError, ValueError):
+                    pass
+            if lot_amounts:
+                value_amount = sum(lot_amounts)
+                currency = lots[0].get("value", {}).get("currency", "GBP")
+
         value_str = f"£{value_amount:,.0f}" if value_amount else "Value not stated"
 
         # Dates
@@ -282,6 +297,7 @@ def _parse_release(release: dict, category: str) -> Optional[Tender]:
             cpv_codes=cpv_codes,
             category=category,
             nuts_codes=nuts_codes,
+            lot_count=lot_count,
         )
 
     except Exception as e:

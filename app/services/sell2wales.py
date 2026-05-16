@@ -254,6 +254,21 @@ def _parse_release(release: dict, category: str) -> Optional[Tender]:
         except (TypeError, ValueError):
             value_amount = None
 
+        lots = tender_block.get("lots", [])
+        lot_count = len(lots)
+        if value_amount is None and lots:
+            lot_amounts = []
+            for lot in lots:
+                la = lot.get("value", {}).get("amount")
+                try:
+                    if la is not None:
+                        lot_amounts.append(float(la))
+                except (TypeError, ValueError):
+                    pass
+            if lot_amounts:
+                value_amount = sum(lot_amounts)
+                currency = lots[0].get("value", {}).get("currency", "GBP")
+
         value_str = f"£{value_amount:,.0f}" if value_amount else "Value not stated"
 
         # Dates
@@ -302,11 +317,63 @@ def _parse_release(release: dict, category: str) -> Optional[Tender]:
             cpv_codes=cpv_codes,
             category=category,
             nuts_codes=nuts_codes,
+            lot_count=lot_count,
         )
 
     except Exception as e:
         logger.debug("Failed to parse Sell2Wales release '%s': %s", _get_ocid(release), e)
         return None
+
+
+async def fetch_notice_by_ocid(ocid: str) -> Optional[Tender]:
+    """
+    Fetch a single S2W notice family by OCID via the /v1/Notice endpoint.
+    Returns a parsed (unscored) Tender, or None if not found.
+    """
+    params = {"id": ocid, "outputType": 0}
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    }
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        try:
+            resp = await client.get(
+                "https://api.sell2wales.gov.wales/v1/Notice",
+                params=params,
+                headers=headers,
+                timeout=30.0,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+            if isinstance(data, list):
+                release = data[0] if data else None
+            elif isinstance(data, dict):
+                releases = data.get("releases", [])
+                release = releases[0] if releases else (data if data.get("ocid") else None)
+            else:
+                return None
+
+            if not release:
+                return None
+
+            tag = release.get("tag", [])
+            tag_lower = [t.lower() for t in tag]
+            if "award" in tag_lower:
+                category = CATEGORY_AWARDED
+            elif any(t in tag_lower for t in ("planning", "prior-information")):
+                category = CATEGORY_FUTURE_OPPORTUNITY
+            else:
+                category = CATEGORY_OPPORTUNITY
+
+            return _parse_release(release, category)
+
+        except httpx.HTTPStatusError as e:
+            logger.warning("S2W direct fetch HTTP error for OCID %s: %s", ocid, e)
+            return None
+        except Exception as e:
+            logger.warning("S2W direct fetch error for OCID %s: %s", ocid, e)
+            return None
 
 
 def _months_to_fetch(days_back: int) -> List[str]:

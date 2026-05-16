@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from app.config import settings
 from app.dependencies import cache, CACHE_KEY_TENDERS, get_last_refresh_time
-from app.models.tender import Tender, TenderListResponse
+from app.models.tender import Tender, TenderListResponse, ProcurementRecord
 from app.services.filtering import apply_filters, apply_sort
 
 logger = logging.getLogger(__name__)
@@ -58,6 +58,32 @@ async def list_tenders(
     )
 
 
+@router.post("/fetch/s2w/{ocid}", summary="Fetch a specific Sell2Wales notice directly and add to cache")
+async def fetch_s2w_notice(ocid: str):
+    """
+    Fetch a specific Sell2Wales notice by OCID (e.g. ocds-kuma6s-XXXXXXXX) and add it to the cache.
+    """
+    from app.services.sell2wales import fetch_notice_by_ocid
+    from app.services.scorer import score_tender
+
+    tender = await fetch_notice_by_ocid(ocid)
+    if not tender:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Notice with OCID '{ocid}' not found on Sell2Wales",
+        )
+    scored = score_tender(tender)
+    scored.manually_added = True
+    tenders = cache.get(CACHE_KEY_TENDERS) or []
+    existing_ids = {t.id for t in tenders}
+    if scored.id not in existing_ids:
+        tenders.append(scored)
+        cache.set(CACHE_KEY_TENDERS, tenders, ttl_minutes=settings.cache_ttl_minutes)
+        logger.info("S2W direct fetch: added '%s' (score=%d)", scored.title, scored.score)
+        return {"status": "added", "tender": scored}
+    return {"status": "already_cached", "tender": scored}
+
+
 @router.post("/fetch/{notice_id}", summary="Fetch a specific FaT notice directly and add to cache")
 async def fetch_fat_notice(notice_id: str):
     """
@@ -83,6 +109,34 @@ async def fetch_fat_notice(notice_id: str):
         logger.info("Direct fetch: added '%s' (score=%d)", scored.title, scored.score)
         return {"status": "added", "tender": scored}
     return {"status": "already_cached", "tender": scored}
+
+
+@router.get("/{tender_id}/record", response_model=ProcurementRecord, summary="Get full procurement lifecycle for a FaT tender")
+async def get_tender_record(tender_id: str):
+    """
+    Fetch the full procurement lifecycle (all notices in the OCID family) for a Find a Tender notice.
+    Only available for tenders with an OCID (FaT source). Returns all related notice entries in
+    chronological order.
+    """
+    from app.services.find_a_tender import fetch_record_by_ocid
+
+    tenders = _get_cached_tenders()
+    tender = next((t for t in tenders if t.id == tender_id), None)
+    if not tender:
+        raise HTTPException(status_code=404, detail=f"Tender '{tender_id}' not found")
+    if not tender.ocid:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Tender '{tender_id}' has no OCID — procurement record not available",
+        )
+
+    record_data = await fetch_record_by_ocid(tender.ocid)
+    if not record_data:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Could not fetch procurement record for OCID '{tender.ocid}' from Find a Tender",
+        )
+    return ProcurementRecord(**record_data)
 
 
 @router.get("/{tender_id}", response_model=Tender, summary="Get single tender")
