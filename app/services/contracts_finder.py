@@ -333,11 +333,16 @@ def _parse_ocds_release(release: dict) -> Optional[Tender]:
         # CPV codes
         cpv_codes: List[str] = []
         for item in tender_block.get("items", []):
+            # Primary: singular classification (standard CF OCDS format)
             classification = item.get("classification", {})
-            if classification.get("scheme", "").upper() == "CPV":
+            if isinstance(classification, dict) and classification.get("scheme", "").upper() == "CPV":
                 cpv_id = classification.get("id", "")
                 if cpv_id:
                     cpv_codes.append(cpv_id)
+            # Fallback: additionalClassifications list (used by some CF and FaT notices)
+            for ac in item.get("additionalClassifications", []):
+                if isinstance(ac, dict) and ac.get("scheme", "").upper() == "CPV" and ac.get("id"):
+                    cpv_codes.append(ac["id"])
 
         direct_class = tender_block.get("classification", {})
         if isinstance(direct_class, dict) and direct_class.get("id"):

@@ -211,16 +211,18 @@ async def fetch_tenders(
     seen_ids: set[str] = set()
     all_tenders: List[Tender] = []
 
-    # Use a wider window for planning stage — UK1 Pipeline notices may not be
-    # updated after publication so updatedFrom needs to go back further
-    # to catch notices published just before the window boundary
+    # Wider windows for pipeline/planning — UK1 notices are published once and
+    # never updated, so we need to look back further to catch them. Tender stage
+    # also extended to 60 days to capture notices published just before the
+    # previous refresh boundary.
     STAGE_DAYS_BACK = {
-        "planning": max(days_back, 60),  # 60 days — UK1/UK2/UK3 planning notices
-        "tender":   days_back,
+        "pipeline": max(days_back, 60),  # UK1 Pipeline notices (published once, never updated)
+        "planning": max(days_back, 60),  # UK2 PME / UK3 Planned Procurement
+        "tender":   max(days_back, 60),  # UK4/UK5 — extended to avoid edge-of-window misses
         "award":    days_back,
     }
 
-    for stage in ("planning", "tender", "award"):
+    for stage in ("pipeline", "planning", "tender", "award"):
         # FaT stages per official documentation (DISTINCT stages):
         # pipeline  → UK1 Pipeline notices (potential future contracts >£2m)
         # planning  → UK2 PME, UK3 Planned Procurement, UK13-15 Dynamic Markets
@@ -395,9 +397,18 @@ async def _fetch_stage(
                     break
 
             except httpx.RequestError as e:
-                logger.warning("FaT request error (stage=%s, page=%d): %s", stage, page, e)
-                url = None
-                break
+                retry_count += 1
+                if retry_count <= MAX_RETRIES:
+                    wait_s = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER ** (retry_count - 1))
+                    logger.warning(
+                        "FaT request error (stage=%s, page=%d, attempt=%d/%d) — retrying in %ds: %s",
+                        stage, page, retry_count, MAX_RETRIES, wait_s, e,
+                    )
+                    await asyncio.sleep(wait_s)
+                else:
+                    logger.warning("FaT request error (stage=%s, page=%d): %s — giving up", stage, page, e)
+                    url = None
+                    break
             except Exception as e:
                 logger.error("Unexpected FaT error (stage=%s, page=%d): %s", stage, page, e, exc_info=True)
                 url = None
