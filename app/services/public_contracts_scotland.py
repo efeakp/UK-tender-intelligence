@@ -83,7 +83,13 @@ async def fetch_tenders(
     import warnings
     warnings.filterwarnings("ignore", message=".*Unverified HTTPS.*")
 
-    async with httpx.AsyncClient(verify=False, follow_redirects=True) as pcs_client:
+    # PCS blocks requests from python-httpx/* User-Agent with 403.
+    # A browser UA is required to receive data.
+    pcs_headers = {
+        "Accept":     "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    }
+    async with httpx.AsyncClient(verify=False, follow_redirects=True, headers=pcs_headers) as pcs_client:
         for month_str in months:
             for notice_type, category in NOTICE_TYPES.items():
                 try:
@@ -132,7 +138,6 @@ async def _fetch_month(
         resp = await client.get(
             BASE_URL,
             params=params,
-            headers={"Accept": "application/json"},
             timeout=30.0,
         )
         resp.raise_for_status()

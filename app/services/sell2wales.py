@@ -134,7 +134,11 @@ async def _fetch_month(
         resp = await client.get(
             BASE_URL,
             params=params,
-            headers={"Accept": "application/json"},
+            headers={
+                "Accept":     "application/json",
+                # Sell2Wales blocks python-httpx/* UA with 403; browser UA required
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+            },
             timeout=30.0,
         )
         resp.raise_for_status()

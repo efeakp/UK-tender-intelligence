@@ -47,11 +47,13 @@ class Settings(BaseSettings):
 
     # ── Source 3: Sell2Wales ──────────────────────────────────────────────────
     # Public API (Open Government Licence) — no key required.
-    # Currently returning 403 — awaiting resolution with Sell2Wales support.
+    # Requires browser-like User-Agent (python-httpx UA returns 403).
+    # Server intermittently returning 500 — ongoing S2W infrastructure issue.
     # Base URL hardcoded in app/services/sell2wales.py
 
     # ── Source 4: Public Contracts Scotland ──────────────────────────────────
     # Public API — no key required.
+    # Requires browser-like User-Agent (python-httpx UA returns 403).
     # SSL verification disabled in client (Windows certificate chain issue).
     # Base URL hardcoded in app/services/public_contracts_scotland.py
 
