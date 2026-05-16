@@ -11,12 +11,26 @@ Parameters:
   locale     : 2057 = English, 1106 = Welsh.
 
 Notice types fetched:
-  1  — Prior Information Notice (OJEU F1)        → Future Opportunity
-  2  — Contract Notice (OJEU F2)                 → Opportunity
-  3  — Contract Award Notice (OJEU F3)           → Awarded Contract
-  51 — Website Invitation to Tender Notice       → Opportunity
-  52 — Website Prior Information Notice          → Future Opportunity
-  53 — Website Contract Award Notice             → Awarded Contract
+  1  — Prior Information Notice (OJEU F1)                    → Future Opportunity
+  2  — Contract Notice (OJEU F2)                             → Opportunity
+  3  — Contract Award Notice (OJEU F3)                       → Awarded Contract
+  4  — Prior Information Notice (Utilities, OJEU F4)         → Future Opportunity
+  5  — Contract Notice (Utilities, OJEU F5)                  → Opportunity
+  6  — Contract Award Notice (Utilities, OJEU F6)            → Awarded Contract
+  7  — Qualification Systems (Utilities, OJEU F7)            → Future Opportunity
+  15 — Voluntary Ex Ante Transparency Notice (OJEU F15)      → Awarded Contract
+  20 — Modification Notice (OJEU F20)                        → Awarded Contract
+  21 — Social and other Specific Services (OJEU F21)         → Opportunity
+  22 — Social and other Specific Services (Utilities, F22)   → Opportunity
+  23 — Social and other Specific Services (Concessions, F23) → Opportunity
+  24 — Concession Notice (OJEU F24)                          → Opportunity
+  25 — Concession Award Notice (OJEU F25)                    → Awarded Contract
+  51 — Website Invitation to Tender Notice                   → Opportunity
+  52 — Website Prior Information Notice                      → Future Opportunity
+  53 — Website Contract Award Notice                         → Awarded Contract
+  54 — Sub Contract Pre Award                                → Opportunity
+  55 — Sub Contract Post Award                               → Awarded Contract
+  56 — Sub Contract Award                                    → Awarded Contract
 
 Strategy: Sell2Wales only supports monthly date ranges (mm-yyyy), not date ranges
 like FaT/CF. We therefore iterate over the required months (derived from days_back)
@@ -54,11 +68,16 @@ NOTICE_TYPES = {
     20: ("Awarded Contract",   "Modification Notice"),                    # ← was missing
     21: ("Opportunity",        "Social and other Specific Services"),     # ← was missing — light-touch
     24: ("Opportunity",        "Concession Notice"),                      # ← was missing — energy concessions
+    22: ("Opportunity",        "Social and other Specific Services (Utilities)"),  # ← utilities social/light-touch
+    23: ("Opportunity",        "Social and other Specific Services (Concessions)"), # ← concession social/light-touch
+    25: ("Awarded Contract",   "Concession Award Notice"),                           # ← concession awards
     # ── Site notices / Below-threshold ───────────────────────────────────────
     51: ("Opportunity",        "Website Invitation to Tender"),
     52: ("Future Opportunity", "Website Prior Information Notice"),
     53: ("Awarded Contract",   "Website Contract Award Notice"),
-    54: ("Opportunity",        "Sub Contract Pre Award"),                 # ← was missing — subcontract opps
+    54: ("Opportunity",        "Sub Contract Pre Award"),                 # ← subcontract opps
+    55: ("Awarded Contract",   "Sub Contract Post Award"),
+    56: ("Awarded Contract",   "Sub Contract Award"),
 }
 
 # Category constants (aligned with FaT and CF clients)
