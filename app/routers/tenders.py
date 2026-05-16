@@ -73,6 +73,7 @@ async def fetch_fat_notice(notice_id: str):
             detail=f"Notice {notice_id} not found on Find a Tender"
         )
     scored = score_tender(tender)
+    scored.manually_added = True
     tenders = cache.get(CACHE_KEY_TENDERS) or []
     existing_ids = {t.id for t in tenders}
     if scored.id not in existing_ids:

@@ -88,6 +88,16 @@ async def refresh_all(
     combined = _deduplicate(all_tenders)
     scored   = bulk_score(combined)
 
+    # ── Re-retain manually-added notices ─────────────────────────────────────
+    # Notices injected via POST /tenders/fetch/{id} won't appear in a normal
+    # refresh (e.g. expired deadlines, pipeline stage DNS blip). Re-add any
+    # that weren't already fetched this cycle so they survive future refreshes.
+    scored_ids = {t.id for t in scored}
+    for t in (previous_tenders or []):
+        if getattr(t, "manually_added", False) and t.id not in scored_ids:
+            scored.append(t)
+            logger.info("Retained manually-added notice: '%s'", t.title)
+
     elapsed = time.monotonic() - start
     counts  = {
         label: sum(1 for t in scored if t.source == source_enum.value)

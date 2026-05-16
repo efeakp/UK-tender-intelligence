@@ -89,6 +89,9 @@ class Tender(BaseModel):
     watchlist_match:     bool         = Field(default=False,  description="True if authority is on Nordic Energy watchlist")
     watchlist_authority: str          = Field(default="",     description="Display name of matched watched authority")
 
+    # Manually injected via POST /tenders/fetch/{id} — preserved across full refreshes
+    manually_added: bool = Field(default=False, description="True if added via direct fetch; survives scheduled refreshes")
+
     model_config = ConfigDict(use_enum_values=True)
 
 
