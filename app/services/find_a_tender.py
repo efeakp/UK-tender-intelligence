@@ -191,13 +191,13 @@ async def fetch_tenders(
     """
     Fetch recent notices from Find a Tender.
 
-    Makes three independent paginated fetches (planning + tender + award stages)
-    and merges the results, deduplicating by notice ID.
-    
-    Stages:
-      planning — UK1 Pipeline / Prior Information Notices (Future Opportunity)
-      tender   — UK4 active tenders / UK2 market engagement (Opportunity / Early Engagement)
-      award    — UK5/UK6 contract awards (Awarded Contract)
+    Makes three independent paginated fetches (planning, tender, award) and
+    merges the results, deduplicating by notice ID.
+
+    Stages (only valid FaT API values — "pipeline" returns 400):
+      planning — UK1 Pipeline + UK2 PME + UK3 Planned Procurement (Future Opportunity / Early Engagement)
+      tender   — UK4 Tender notice + UK5 Transparency notice (Opportunity)
+      award    — UK6 Contract award notice (Awarded Contract), 14-day window
     Returns raw (unscored) Tender objects.
     """
     date_from = (
@@ -215,21 +215,24 @@ async def fetch_tenders(
     # never updated, so we need to look back further to catch them. Tender stage
     # also extended to 60 days to capture notices published just before the
     # previous refresh boundary.
+    # Valid FaT API stage values (official docs): planning, tender, award.
+    # "pipeline" is NOT a valid value — returns 400 Bad Request.
+    # UK1 pipeline notices are returned by stages=planning alongside UK2/UK3.
+    # Award window kept shorter than planning/tender — a full 30-day window
+    # fetches 17+ pages, triggers rate-limiting, and takes ~5 minutes with
+    # minimal added intelligence value beyond the most recent 14 days.
     STAGE_DAYS_BACK = {
-        "pipeline": max(days_back, 60),  # UK1 Pipeline notices (published once, never updated)
-        "planning": max(days_back, 60),  # UK2 PME / UK3 Planned Procurement
-        "tender":   max(days_back, 60),  # UK4/UK5 — extended to avoid edge-of-window misses
-        "award":    days_back,
+        "planning": max(days_back, 60),  # UK1 pipeline + UK2 PME + UK3 Planned Procurement
+        "tender":   max(days_back, 60),  # UK4 tender + UK5 transparency
+        "award":    min(days_back, 14),  # UK6 contract award — 14 days sufficient
     }
 
-    for stage in ("pipeline", "planning", "tender", "award"):
-        # FaT stages per official documentation (DISTINCT stages):
-        # pipeline  → UK1 Pipeline notices (potential future contracts >£2m)
-        # planning  → UK2 PME, UK3 Planned Procurement, UK13-15 Dynamic Markets
+    for stage in ("planning", "tender", "award"):
+        # FaT stages per official documentation:
+        # planning  → UK1 Pipeline, UK2 PME, UK3 Planned Procurement, UK13-15 Dynamic Markets
         # tender    → UK4 Tender notice, UK5 Transparency notice
         # award     → UK6 Contract award notice
-        # contract  → UK7 Contract details, UK9-12 Performance/Change/Termination
-        # Excluded: termination (UK11/UK12/UK16), payments (UK17)
+        # Excluded: contract (UK7/UK9-12), termination, payments — not actionable for NE
         stage_days = STAGE_DAYS_BACK.get(stage, days_back)
         stage_date_from = (
             datetime.now(timezone.utc) - timedelta(days=stage_days)
