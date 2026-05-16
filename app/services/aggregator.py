@@ -23,6 +23,12 @@ logger = logging.getLogger(__name__)
 
 _DEDUP_THRESHOLD = 0.85
 
+# Higher = more actionable/recent — used to prefer UK4 over UK1 in Jaccard dedup
+_NOTICE_PRIORITY = {
+    "UK4": 9, "UK5": 8, "UK3": 7, "UK2": 6,
+    "UK1": 5, "UK6": 4, "UK7": 3,
+}
+
 _SOURCE_INFO = [
     (TenderSource.FIND_A_TENDER,             "Find a Tender",           find_a_tender.fetch_tenders),
     (TenderSource.CONTRACTS_FINDER,          "Contracts Finder",        contracts_finder.fetch_tenders),
@@ -85,6 +91,12 @@ async def refresh_all(
         all_tenders.extend(tenders)
 
     # ── Deduplicate, score ────────────────────────────────────────────────────
+    # Sort so that more actionable notice types (UK4 > UK1) win the Jaccard dedup.
+    # The deduplicator keeps the first occurrence, so highest-priority must come first.
+    all_tenders.sort(
+        key=lambda t: _NOTICE_PRIORITY.get(t.notice_type, 5),
+        reverse=True,
+    )
     combined = _deduplicate(all_tenders)
     scored   = bulk_score(combined)
 

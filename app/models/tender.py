@@ -85,6 +85,13 @@ class Tender(BaseModel):
     notice_type:      str            = Field(default="",   description="UK notice type: UK1/UK2/UK3/UK4/UK5/UK6 etc.")
     ocid:             str            = Field(default="",   description="OCDS procurement identifier linking all notices in the same family")
 
+    # Delivery regions — NUTS codes extracted from tender.items[].deliveryAddresses[].region
+    nuts_codes: List[str] = Field(default_factory=list)
+
+    # Expected tender notice date — populated for UK3 Planned Procurement Notices
+    # Tells us when the linked UK4 tender notice is expected to drop
+    future_notice_date: Optional[datetime] = None
+
     # Watchlist — set by scorer via watchlist.py after check against WATCHED_AUTHORITIES
     watchlist_match:     bool         = Field(default=False,  description="True if authority is on Nordic Energy watchlist")
     watchlist_authority: str          = Field(default="",     description="Display name of matched watched authority")

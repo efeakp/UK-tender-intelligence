@@ -521,10 +521,30 @@ def _parse_fat_release(release: dict, stage_hint: str = "") -> Optional[Tender]:
             cpv_codes.append(direct["id"])
         cpv_codes = list(dict.fromkeys(cpv_codes))
 
+        # NUTS delivery region codes
+        nuts_codes: List[str] = []
+        for item in tender_block.get("items", []):
+            for addr in item.get("deliveryAddresses", []):
+                region = addr.get("region", "")
+                if region and region.upper().startswith("UK"):
+                    nuts_codes.append(region.upper())
+        nuts_codes = list(dict.fromkeys(nuts_codes))
+
         # Notice category — inspect planning.documents for UK notice type first
         uk_notice_type = _extract_uk_notice_type(release)
         status         = tender_block.get("status")
+
+        SKIP_STATUSES = {"cancelled", "withdrawn", "unsuccessful"}
+        if status in SKIP_STATUSES:
+            logger.debug("Skipping FaT release '%s' — status=%s", notice_id, status)
+            return None
+
         category       = _classify_notice(tag, status, deadline, uk_notice_type)
+
+        # For UK3 Planned Procurement Notices, use futureNoticeDate as a proxy deadline
+        # if no tenderPeriod.endDate is present — it tells us when the UK4 is expected
+        if not deadline and future_notice_date and uk_notice_type == "UK3":
+            deadline = future_notice_date
 
         # Canonical URL — use the notice ID from the last planning.documents
         # entry when available (more reliable direct link than OCID suffix)
@@ -552,6 +572,8 @@ def _parse_fat_release(release: dict, stage_hint: str = "") -> Optional[Tender]:
             category=category,
             notice_type=uk_notice_type or "",
             ocid=ocid or "",
+            nuts_codes=nuts_codes,
+            future_notice_date=future_notice_date,
         )
         return tender_obj
 

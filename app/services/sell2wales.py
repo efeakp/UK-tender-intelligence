@@ -219,6 +219,11 @@ def _parse_release(release: dict, category: str) -> Optional[Tender]:
         tender_block = release.get("tender", {})
         buyer        = release.get("buyer", {})
 
+        status = tender_block.get("status", "")
+        if status in {"cancelled", "withdrawn", "unsuccessful"}:
+            logger.debug("Skipping S2W release '%s' — status=%s", _get_ocid(release), status)
+            return None
+
         title       = tender_block.get("title") or release.get("title", "Untitled")
         description = tender_block.get("description") or release.get("description", "")
         authority   = (
@@ -269,6 +274,15 @@ def _parse_release(release: dict, category: str) -> Optional[Tender]:
             cpv_codes.append(direct["id"])
         cpv_codes = list(dict.fromkeys(cpv_codes))
 
+        # NUTS delivery region codes
+        nuts_codes: List[str] = []
+        for item in tender_block.get("items", []):
+            for addr in item.get("deliveryAddresses", []):
+                region = addr.get("region", "")
+                if region and region.upper().startswith("UK"):
+                    nuts_codes.append(region.upper())
+        nuts_codes = list(dict.fromkeys(nuts_codes))
+
         # Canonical URL — Sell2Wales notice page
         ocid_suffix = ocid.replace("ocds-kuma6s-", "").replace("ocds-", "")
         url = f"https://www.sell2wales.gov.wales/Search/Search_Switch.aspx?ID={ocid_suffix}"
@@ -287,6 +301,7 @@ def _parse_release(release: dict, category: str) -> Optional[Tender]:
             url=url,
             cpv_codes=cpv_codes,
             category=category,
+            nuts_codes=nuts_codes,
         )
 
     except Exception as e:

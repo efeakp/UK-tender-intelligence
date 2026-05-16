@@ -26,6 +26,7 @@ def apply_filters(
     scope: Optional[str] = None,
     category: Optional[str] = None,
     min_score: int = 0,
+    region: Optional[str] = None,
 ) -> List[Tender]:
     if q:
         q_lower = q.lower()
@@ -44,6 +45,12 @@ def apply_filters(
         tenders = [t for t in tenders if t.category in allowed]
     if min_score > 0:
         tenders = [t for t in tenders if t.score >= min_score]
+    if region:
+        region_upper = region.upper()
+        tenders = [
+            t for t in tenders
+            if any(n.startswith(region_upper) for n in (t.nuts_codes or []))
+        ]
     return tenders
 
 

@@ -303,6 +303,10 @@ def _parse_ocds_release(release: dict) -> Optional[Tender]:
         authority   = buyer.get("name", "Unknown Authority")
         status      = tender_block.get("status")
 
+        if status == "cancelled":
+            logger.debug("Skipping CF release '%s' — status cancelled", ocid)
+            return None
+
         # Value — prefer award value for awarded contracts
         value_amount: Optional[float] = None
         currency = "GBP"
@@ -354,6 +358,15 @@ def _parse_ocds_release(release: dict) -> Optional[Tender]:
 
         cpv_codes = list(dict.fromkeys(cpv_codes))
 
+        # NUTS delivery region codes
+        nuts_codes: List[str] = []
+        for item in tender_block.get("items", []):
+            for addr in item.get("deliveryAddresses", []):
+                region = addr.get("region", "")
+                if region and region.upper().startswith("UK"):
+                    nuts_codes.append(region.upper())
+        nuts_codes = list(dict.fromkeys(nuts_codes))
+
         # Notice category — passes title + description for planning notice disambiguation
         category = _classify_cf_notice(tag, status, title, description)
 
@@ -384,6 +397,7 @@ def _parse_ocds_release(release: dict) -> Optional[Tender]:
             cpv_codes=cpv_codes,
             category=category,
             ocid=ocid or "",
+            nuts_codes=nuts_codes,
             # CF uses its own notice types (Future Opportunity, Early Engagement etc.)
             # stored in the category field — notice_type left as empty for CF
         )
