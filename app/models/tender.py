@@ -96,10 +96,35 @@ class Tender(BaseModel):
     watchlist_match:     bool         = Field(default=False,  description="True if authority is on Nordic Energy watchlist")
     watchlist_authority: str          = Field(default="",     description="Display name of matched watched authority")
 
+    # Lot information — populated when tender.lots[] is present in the OCDS release
+    lot_count: int = Field(default=0, description="Number of lots in this tender (0 = single contract)")
+
     # Manually injected via POST /tenders/fetch/{id} — preserved across full refreshes
     manually_added: bool = Field(default=False, description="True if added via direct fetch; survives scheduled refreshes")
 
     model_config = ConfigDict(use_enum_values=True)
+
+
+class NoticeEntry(BaseModel):
+    """A single notice in a procurement lifecycle — used by ProcurementRecord."""
+    notice_id:   str
+    notice_type: str
+    date:        Optional[datetime]
+    tag:         List[str]
+    url:         str
+    title:       str
+
+
+class ProcurementRecord(BaseModel):
+    """Full procurement lifecycle returned by GET /tenders/{id}/record."""
+    ocid:           str
+    title:          str
+    authority:      str
+    current_status: str
+    current_value:  Optional[str]
+    lot_count:      int
+    notices:        List[NoticeEntry]
+    source:         str
 
 
 class TenderListResponse(BaseModel):
