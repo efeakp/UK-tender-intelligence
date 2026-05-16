@@ -42,12 +42,23 @@ BASE_URL = "https://api.sell2wales.gov.wales/v1/Notices"
 
 # Notice types to fetch and their category mappings
 NOTICE_TYPES = {
+    # ── OJEU / Above-threshold notices ───────────────────────────────────────
     1:  ("Future Opportunity", "Prior Information Notice"),
     2:  ("Opportunity",        "Contract Notice"),
     3:  ("Awarded Contract",   "Contract Award Notice"),
+    4:  ("Future Opportunity", "Prior Information Notice (Utilities)"),   # ← was missing
+    5:  ("Opportunity",        "Contract Notice (Utilities)"),            # ← was missing — heat networks, district energy
+    6:  ("Awarded Contract",   "Contract Award Notice (Utilities)"),      # ← was missing
+    7:  ("Future Opportunity", "Qualification Systems (Utilities)"),      # ← was missing — DPS
+    15: ("Awarded Contract",   "Voluntary Ex Ante Transparency"),         # ← was missing — direct awards
+    20: ("Awarded Contract",   "Modification Notice"),                    # ← was missing
+    21: ("Opportunity",        "Social and other Specific Services"),     # ← was missing — light-touch
+    24: ("Opportunity",        "Concession Notice"),                      # ← was missing — energy concessions
+    # ── Site notices / Below-threshold ───────────────────────────────────────
     51: ("Opportunity",        "Website Invitation to Tender"),
     52: ("Future Opportunity", "Website Prior Information Notice"),
     53: ("Awarded Contract",   "Website Contract Award Notice"),
+    54: ("Opportunity",        "Sub Contract Pre Award"),                 # ← was missing — subcontract opps
 }
 
 # Category constants (aligned with FaT and CF clients)

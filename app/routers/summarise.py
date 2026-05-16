@@ -177,5 +177,5 @@ async def summarise_tender(tender_id: str):
             detail=f"Cannot connect to Ollama at {settings.ollama_base_url}. Make sure it is running: ollama serve",
         )
     except Exception as e:
-        logger.error("Summarisation failed for %s: %s", tender_id, e)
-        raise HTTPException(status_code=500, detail=f"Summarisation failed: {e}")
+        logger.error("Summarisation failed for %s: %s", tender_id, e, exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Summarisation failed: {type(e).__name__}: {e}")

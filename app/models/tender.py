@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional
 from datetime import datetime
 from enum import Enum
@@ -89,8 +89,7 @@ class Tender(BaseModel):
     watchlist_match:     bool         = Field(default=False,  description="True if authority is on Nordic Energy watchlist")
     watchlist_authority: str          = Field(default="",     description="Display name of matched watched authority")
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 class TenderListResponse(BaseModel):
