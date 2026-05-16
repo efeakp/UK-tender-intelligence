@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     refresh_days_back: int = 30
 
     # ── Scoring ───────────────────────────────────────────────────────────────
-    min_score_default: int = 3
+    min_score_default: int = 5
 
     # ── Source 1: Find a Tender ───────────────────────────────────────────────
     # Public API — no key required. Key is optional but raises rate limits.

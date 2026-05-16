@@ -24,7 +24,60 @@ SCOPE_S03_OPTIMISATION    = ScopeTag.OPTIMISATION
 SCOPE_S04_BUSINESS_CASE   = ScopeTag.BUSINESS_CASE
 
 
-# ── Negative keywords — suppress out-of-scope matches ────────────────────────
+# ── Hard-negative keywords — score → 0 (clearly out of scope) ────────────────
+# If ANY of these appear in the title or description, the tender scores 0.
+# Reserved for contract types that can never be NE's work.
+HARD_NEGATIVE_KEYWORDS: List[str] = [
+    # Commodity supply — buying energy, not consulting on it
+    "electricity supply",
+    "gas supply",
+    "fuel supply",
+    "energy supply contract",
+    "utilities supply",
+    "energy procurement",
+    "energy broker",
+    # Water & drainage
+    "water supply",
+    "wastewater treatment",
+    "sewerage services",
+    "drainage contract",
+    "water network maintenance",
+    # Waste & environment ops
+    "waste collection",
+    "refuse collection",
+    "waste management services",
+    "recycling services",
+    "grounds maintenance",
+    "grounds maintenance services",
+    "horticulture services",
+    # Transport & highways
+    "highway maintenance",
+    "road maintenance",
+    "carriageway maintenance",
+    "bus services",
+    "passenger transport services",
+    "fleet management",
+    "parking services",
+    "traffic management",
+    # Catering
+    "catering services",
+    "catering contract",
+    "school meals",
+    "food services contract",
+    # Security
+    "security guarding",
+    "manned guarding",
+    "door supervisor",
+    # HR / payroll / finance ops
+    "debt collection",
+    "payroll services",
+    "payroll outsourcing",
+    "agency staff",
+    "temporary staffing",
+    "locum services",
+]
+
+# ── Soft-negative keywords — score halved ─────────────────────────────────────
 # If ANY of these appear in the title/description, the score is halved.
 # These catch energy-adjacent tenders that are not Nordic Energy's work.
 NEGATIVE_KEYWORDS: List[str] = [
@@ -36,7 +89,6 @@ NEGATIVE_KEYWORDS: List[str] = [
     "fuel cards",
     "utilities billing",
     "energy billing",
-    "gas supply",
     "electricity supply contract",
     "energy procurement contract",
     "meter reading",
@@ -65,6 +117,30 @@ NEGATIVE_KEYWORDS: List[str] = [
     "offshore wind farm development",
     "wind farm developer",
 ]
+
+# ── Title-only keywords ───────────────────────────────────────────────────────
+# These terms appear in boilerplate across almost every public-sector tender
+# (sustainability sections, background, policy context). They only score when
+# found in the TITLE, where they indicate the contract is specifically about
+# that subject.
+TITLE_ONLY_KEYWORDS: frozenset = frozenset({
+    "net zero",
+    "net-zero",
+    "decarbonisation",
+    "decarbonization",
+    "sustainability strategy",
+    "esg",
+    "carbon reduction",
+    "carbon reduction plan",
+    "energy efficiency",
+    "net zero strategy",
+    "decarbonisation strategy",
+    "energy strategy",
+    "stakeholder engagement",
+    "public consultation",
+    "community engagement",
+    "inward investment",
+})
 
 
 # ── Keyword taxonomy ──────────────────────────────────────────────────────────
@@ -450,16 +526,12 @@ NE_CPV_CODES: dict[str, str] = {
     "45331000": "Heating, ventilation and air-conditioning",
     "45331100": "Central-heating installation",
     # Service 02 — Feasibility Studies
-    "71240000": "Architectural, engineering and planning services",
     "71241000": "Feasibility study, advisory service, analysis",
-    "71300000": "Engineering services",
     "71313000": "Environmental engineering consultancy",
     "71314000": "Energy and related services",
     "71314200": "Energy-management services",
     "71314300": "Energy-efficiency consultancy",
     "71315000": "Building-services engineering",
-    "71318000": "Consultancy and advisory engineering",
-    "71320000": "Engineering design services",
     "71321200": "Heating system engineering services",
     "79314000": "Feasibility study",
     "73420000": "Pre-feasibility study",
@@ -469,26 +541,9 @@ NE_CPV_CODES: dict[str, str] = {
     "45231000": "Construction work for pipelines",
     "45251000": "Power plant construction work",
     "45259300": "Heating plant repair and maintenance",
-    "50700000": "Repair and maintenance of building installations",
-    # Service 04 — Business Case Development
-    "79400000": "Business and management consultancy",
-    "79410000": "Business and management consultancy services",
-    "79411000": "General management consultancy services",
-    "73200000": "Research and development consultancy",
-    # Environmental & cross-cutting
+    # Environmental & cross-cutting (specific only)
     "71313410": "Environmental impact assessment",
-    "90700000": "Environmental services",
-    "90710000": "Environmental management",
     "90711000": "Environmental impact assessment",
-    "90712000": "Environmental planning",
-    "90712100": "Urban environmental development planning",
-    "90713000": "Environmental issues consultancy services",
-    "90714000": "Environmental audit services",
-    "71500000": "Construction-related services",
-    "71600000": "Technical testing, analysis and consultancy",
-    "71621000": "Technical analysis or consultancy services",
-    "72224000": "Project management consultancy services",
-    "79420000": "Project-management services",
 }
 
 NE_CPV_SET = set(NE_CPV_CODES.keys())
@@ -529,8 +584,14 @@ def _normalise(text: str) -> str:
     return text.lower().strip()
 
 
+def _check_hard_negative(title: str, description: str) -> bool:
+    """Return True if this tender is clearly out of scope — score set to 0."""
+    corpus = _normalise(f"{title} {description}")
+    return any(_normalise(hnk) in corpus for hnk in HARD_NEGATIVE_KEYWORDS)
+
+
 def _check_negative(title: str, description: str) -> bool:
-    """Return True if this tender matches a negative keyword (out of scope)."""
+    """Return True if this tender matches a soft-negative keyword — score halved."""
     corpus = _normalise(f"{title} {description}")
     return any(_normalise(nk) in corpus for nk in NEGATIVE_KEYWORDS)
 
@@ -556,23 +617,24 @@ def score_tender(tender: Tender) -> Tender:
     )
 
     raw_score = 0
+    title_hit_count = 0
     matched: List[str] = []
     matched_scopes = []
 
     for scope, keywords in SCOPE_KEYWORDS.items():
         scope_hit = False
         for kw in keywords:
-            kw_lower = _normalise(kw)
+            kw_lower  = _normalise(kw)
             is_multi  = " " in kw
+            title_only = kw_lower in TITLE_ONLY_KEYWORDS
 
             if kw_lower in title_corpus:
-                # Title match — higher weight
                 weight = 3 if is_multi else 2
                 raw_score += weight
                 matched.append(kw)
                 scope_hit = True
-            elif kw_lower in desc_corpus:
-                # Description/CPV match — standard weight
+                title_hit_count += 1
+            elif not title_only and kw_lower in desc_corpus:
                 weight = 2 if is_multi else 1
                 raw_score += weight
                 matched.append(kw)
@@ -585,9 +647,17 @@ def score_tender(tender: Tender) -> Tender:
     cpv_bonus, matched_cpv = _score_cpv_codes(tender.cpv_codes)
     raw_score += cpv_bonus
 
-    # Apply negative keyword penalty — halve the score
-    if _check_negative(tender.title, tender.description):
+    # Hard negative — tender is clearly out of scope, zero the score
+    if _check_hard_negative(tender.title, tender.description):
+        raw_score = 0
+    # Soft negative — energy-adjacent but not NE's work, halve the score
+    elif _check_negative(tender.title, tender.description):
         raw_score = raw_score // 2
+
+    # No title hit cap — prevent description/CPV spam from surfacing as Strong
+    # matches. Tenders with no title keyword match can at most score 5 (Likely).
+    if title_hit_count == 0:
+        raw_score = min(raw_score, 5)
 
     tender.score            = min(raw_score, 10)
     tender.matched_keywords = list(dict.fromkeys(matched))

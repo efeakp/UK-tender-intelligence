@@ -33,7 +33,7 @@ async def list_tenders(
     source:     Optional[str] = Query(None,       description="Filter by source"),
     scope:      Optional[str] = Query(None,       description="Filter by matched business scope label"),
     category:   Optional[str] = Query(None,       description="Filter by notice category"),
-    min_score:  int           = Query(default=3,  ge=0, le=10, description="Minimum relevance score"),
+    min_score:  int           = Query(default=5,  ge=0, le=10, description="Minimum relevance score"),
     page:       int           = Query(default=1,  ge=1),
     page_size:  int           = Query(default=25, ge=1, le=2000, description="Results per page"),
     sort_by:    str           = Query(default="score", description="score | deadline | published | value"),

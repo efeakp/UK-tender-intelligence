@@ -33,7 +33,7 @@ router = APIRouter(prefix="/digest", tags=["Digest"])
 
 # ── Score thresholds ──────────────────────────────────────────────────────────
 STRONG_THRESHOLD  = 7   # Score ≥ 7 → Strong match (always included)
-LIKELY_THRESHOLD  = 4   # Score ≥ 4 → Likely relevant (included if < 5 strong)
+LIKELY_THRESHOLD  = 6   # Score ≥ 6 → Likely relevant (included to fill digest)
 DEADLINE_DAYS     = 14  # Tenders with deadline within 14 days flagged urgently
 MAX_TENDERS       = 10  # Maximum tenders in digest
 
