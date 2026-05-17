@@ -51,8 +51,10 @@ import httpx
 from app.config import settings
 from app.models.tender import Tender, TenderSource
 
-CF_MAX_RETRIES    = 3
-CF_RETRY_BACKOFF  = 60  # seconds; multiplied by retry_count on each attempt
+CF_MAX_RETRIES              = 3
+CF_RETRY_BACKOFF            = 60   # seconds; multiplied by retry_count on each 429 attempt
+CF_NETWORK_RETRY_DELAY_S    = 10   # short fixed delay for transient DNS/connection errors
+CF_MAX_NETWORK_RETRIES      = 2    # give up after 2 network-error retries per page
 
 logger = logging.getLogger(__name__)
 
@@ -191,8 +193,9 @@ async def fetch_tenders(
             "page":    page,
         }
 
-        fetched     = False
-        retry_count = 0
+        fetched           = False
+        retry_count       = 0
+        network_retries   = 0
 
         while not fetched and retry_count <= CF_MAX_RETRIES:
             try:
@@ -247,9 +250,17 @@ async def fetch_tenders(
                     break
 
             except httpx.RequestError as e:
-                logger.warning("CF request error on page %d: %s", page, e)
-                max_page = 0
-                break
+                network_retries += 1
+                if network_retries <= CF_MAX_NETWORK_RETRIES:
+                    logger.warning(
+                        "CF network error on page %d — retrying in %ds (attempt %d/%d): %s",
+                        page, CF_NETWORK_RETRY_DELAY_S, network_retries, CF_MAX_NETWORK_RETRIES, e,
+                    )
+                    await asyncio.sleep(CF_NETWORK_RETRY_DELAY_S)
+                else:
+                    logger.warning("CF network error on page %d — giving up: %s", page, e)
+                    max_page = 0
+                    break
 
             except Exception as e:
                 logger.error("Unexpected CF error on page %d: %s", page, e, exc_info=True)

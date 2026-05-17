@@ -9,7 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from app.config import settings
-from app.dependencies import cache, CACHE_KEY_TENDERS, update_all_source_meta
+from app.dependencies import cache, CACHE_KEY_TENDERS, update_all_source_meta, get_prev_tenders, set_prev_tenders
 
 logger = logging.getLogger(__name__)
 
@@ -30,27 +30,21 @@ async def _run_refresh():
 
     logger.info("Scheduled refresh starting at %s", datetime.now(timezone.utc).isoformat())
     try:
-        previous_tenders = cache.get(CACHE_KEY_TENDERS) or []
-        tenders, errors = await refresh_all(
+        previous_tenders = get_prev_tenders()
+        tenders, errors, raw_source_counts = await refresh_all(
             days_back=settings.refresh_days_back,
             previous_tenders=previous_tenders,
         )
 
         cache.set(CACHE_KEY_TENDERS, tenders, ttl_minutes=settings.cache_ttl_minutes)
-
-        source_counts = {
-            "Find a Tender":           sum(1 for t in tenders if t.source == "Find a Tender"),
-            "Contracts Finder":        sum(1 for t in tenders if t.source == "Contracts Finder"),
-            "Sell2Wales":              sum(1 for t in tenders if t.source == "Sell2Wales"),
-            "Public Contracts Scotland": sum(1 for t in tenders if t.source == "Public Contracts Scotland"),
-        }
-        update_all_source_meta(source_counts, errors)
+        set_prev_tenders(tenders)
+        update_all_source_meta(raw_source_counts, errors)
 
         logger.info(
             "Scheduled refresh complete: %d tenders (window: %d days) — %s",
             len(tenders),
             settings.refresh_days_back,
-            " | ".join(f"{k}:{v}" for k, v in source_counts.items()),
+            " | ".join(f"{k}:{v}" for k, v in raw_source_counts.items()),
         )
 
     except Exception as e:

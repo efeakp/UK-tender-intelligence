@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 logger = logging.getLogger(__name__)
 
 CACHE_KEY_TENDERS          = "tenders:all"
+CACHE_KEY_PREV_TENDERS     = "tenders:prev"   # long-lived fallback; survives main cache TTL
 CACHE_KEY_FAT_META         = "meta:find_a_tender"
 CACHE_KEY_CF_META          = "meta:contracts_finder"
 CACHE_KEY_S2W_META         = "s2w_meta"
@@ -91,6 +92,19 @@ def set_source_meta(key: str, meta: SourceMeta) -> None:
     cache._store[key] = CacheEntry(
         value=meta,
         expires_at=datetime.now(timezone.utc) + timedelta(days=365),
+    )
+
+
+def get_prev_tenders() -> list:
+    """Return the last successful refresh result regardless of main cache TTL."""
+    return cache._store.get(CACHE_KEY_PREV_TENDERS) and cache._store[CACHE_KEY_PREV_TENDERS].value or []
+
+
+def set_prev_tenders(tenders: list) -> None:
+    """Persist tenders as the long-lived fallback (48-hour TTL, updated on every refresh)."""
+    cache._store[CACHE_KEY_PREV_TENDERS] = CacheEntry(
+        value=tenders,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=48),
     )
 
 

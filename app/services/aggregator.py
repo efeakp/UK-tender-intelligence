@@ -40,7 +40,7 @@ _SOURCE_INFO = [
 async def refresh_all(
     days_back: int = 30,
     previous_tenders: Optional[List[Tender]] = None,
-) -> Tuple[List[Tender], List[str]]:
+) -> Tuple[List[Tender], List[str], dict]:
     """
     Fetch from all sources concurrently, deduplicate, score, and return results.
 
@@ -50,7 +50,9 @@ async def refresh_all(
                            if a fetch fails or returns 0 results.
 
     Returns:
-        (scored_tenders, list_of_error_messages)
+        (scored_tenders, list_of_error_messages, raw_source_counts)
+        raw_source_counts: pre-dedup fetch counts keyed by source label.
+        Use these for health reporting rather than post-dedup counts.
     """
     errors: List[str] = []
     start = time.monotonic()
@@ -80,6 +82,8 @@ async def refresh_all(
 
     # ── Merge results with per-source fallback ────────────────────────────────
     all_tenders: List[Tender] = []
+    raw_source_counts: dict[str, int] = {}  # pre-dedup counts for health reporting
+
     for (source_enum, label, _), result in zip(_SOURCE_INFO, results):
         if isinstance(result, Exception):
             msg = f"{label} fetch failed: {result}"
@@ -88,6 +92,8 @@ async def refresh_all(
             tenders: List[Tender] = []
         else:
             tenders = result
+
+        raw_source_counts[label] = len(tenders)
 
         if not tenders:
             fallback = prev_by_source.get(source_enum.value, [])
@@ -121,19 +127,15 @@ async def refresh_all(
             logger.info("Retained manually-added notice: '%s'", t.title)
 
     elapsed = time.monotonic() - start
-    counts  = {
-        label: sum(1 for t in scored if t.source == source_enum.value)
-        for source_enum, label, _ in _SOURCE_INFO
-    }
     logger.info(
         "Refresh complete: %d tenders from %d raw in %.1fs (%d errors) — %s",
         len(scored),
         len(all_tenders),
         elapsed,
         len(errors),
-        " | ".join(f"{label}:{count}" for label, count in counts.items()),
+        " | ".join(f"{label}:{raw_source_counts.get(label, 0)}" for _, label, _ in _SOURCE_INFO),
     )
-    return scored, errors
+    return scored, errors, raw_source_counts
 
 
 def _deduplicate(tenders: List[Tender]) -> List[Tender]:

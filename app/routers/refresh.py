@@ -12,6 +12,8 @@ from app.dependencies import (
     cache,
     CACHE_KEY_TENDERS,
     update_all_source_meta,
+    get_prev_tenders,
+    set_prev_tenders,
 )
 from app.models.tender import RefreshResponse
 
@@ -82,21 +84,16 @@ async def _do_refresh() -> RefreshResponse:
         try:
             from app.services.aggregator import refresh_all
 
-            previous_tenders = cache.get(CACHE_KEY_TENDERS) or []
-            tenders, errors = await refresh_all(
+            previous_tenders = get_prev_tenders()
+            tenders, errors, raw_source_counts = await refresh_all(
                 days_back=settings.refresh_days_back,
                 previous_tenders=previous_tenders,
             )
 
             cache.set(CACHE_KEY_TENDERS, tenders, ttl_minutes=settings.cache_ttl_minutes)
+            set_prev_tenders(tenders)
 
-            source_counts = {
-                "Find a Tender":           sum(1 for t in tenders if t.source == "Find a Tender"),
-                "Contracts Finder":        sum(1 for t in tenders if t.source == "Contracts Finder"),
-                "Sell2Wales":              sum(1 for t in tenders if t.source == "Sell2Wales"),
-                "Public Contracts Scotland": sum(1 for t in tenders if t.source == "Public Contracts Scotland"),
-            }
-            update_all_source_meta(source_counts, errors)
+            update_all_source_meta(raw_source_counts, errors)
 
             elapsed = time.monotonic() - start
             _last_refresh_completed = datetime.now(timezone.utc)
