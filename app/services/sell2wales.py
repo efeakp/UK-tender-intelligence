@@ -8,35 +8,45 @@ Parameters:
   dateFrom   : Month and year in format 'mm-yyyy'. Default is current month.
   noticeType : See notice type list below. Default is 2 (Contract Notice).
   outputType : 0 = OCDS format, 1 = TED/custom format. Default is 0.
-  locale     : 2057 = English, 1106 = Welsh.
+  locale     : Documented values: 2057 = English, 1106 = Welsh.
+               WARNING: locale=2057 (and omitting locale entirely) triggers a SQL
+               cast error on the S2W server ("Error converting data type nvarchar
+               to float"). The only working value found via live testing is locale=0.
 
-Notice types fetched:
-  1  — Prior Information Notice (OJEU F1)                    → Future Opportunity
+Notice type status (verified via live API testing, May 2026):
+
+  WORKING — return HTTP 200 with locale=0:
   2  — Contract Notice (OJEU F2)                             → Opportunity
-  3  — Contract Award Notice (OJEU F3)                       → Awarded Contract
-  4  — Prior Information Notice (Utilities, OJEU F4)         → Future Opportunity
   5  — Contract Notice (Utilities, OJEU F5)                  → Opportunity
   6  — Contract Award Notice (Utilities, OJEU F6)            → Awarded Contract
-  7  — Qualification Systems (Utilities, OJEU F7)            → Future Opportunity
   15 — Voluntary Ex Ante Transparency Notice (OJEU F15)      → Awarded Contract
   20 — Modification Notice (OJEU F20)                        → Awarded Contract
   21 — Social and other Specific Services (OJEU F21)         → Opportunity
   22 — Social and other Specific Services (Utilities, F22)   → Opportunity
   23 — Social and other Specific Services (Concessions, F23) → Opportunity
-  24 — Concession Notice (OJEU F24)                          → Opportunity
   25 — Concession Award Notice (OJEU F25)                    → Awarded Contract
-  51 — Website Invitation to Tender Notice                   → Opportunity
-  52 — Website Prior Information Notice                      → Future Opportunity
-  53 — Website Contract Award Notice                         → Awarded Contract
   54 — Sub Contract Pre Award                                → Opportunity
   55 — Sub Contract Post Award                               → Awarded Contract
   56 — Sub Contract Award                                    → Awarded Contract
 
-Strategy: Sell2Wales only supports monthly date ranges (mm-yyyy), not date ranges
-like FaT/CF. We therefore iterate over the required months (derived from days_back)
-and fetch each one in turn, deduplicating by OCID.
+  BROKEN — return HTTP 500 regardless of locale:
+  1  — Prior Information Notice (OJEU F1)
+  3  — Contract Award Notice (OJEU F3)
+  4  — Prior Information Notice (Utilities, OJEU F4)
+  7  — Qualification Systems (Utilities, OJEU F7)
+  24 — Concession Notice (OJEU F24)
+  51 — Website Invitation to Tender Notice
+  52 — Website Prior Information Notice
+  53 — Website Contract Award Notice
 
-OCDS output structure mirrors the standard OCDS release format used by FaT and CF.
+Note: As of May 2026, the S2W OCDS API returns 200 with an empty releases array
+for all working notice types — the response contains only the OCDS package header.
+This is a server-side data population issue. The client is structured to handle
+data correctly once S2W restores their OCDS release export.
+
+Strategy: Sell2Wales only supports monthly date ranges (mm-yyyy). We iterate over
+the required months (derived from days_back) and fetch each working notice type per
+month, deduplicating by OCID.
 """
 
 import logging
@@ -52,30 +62,26 @@ from app.models.tender import Tender, TenderSource
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://api.sell2wales.gov.wales/v1/Notices"
-# locale parameter omitted from requests — causes SQL cast error on S2W server
 
-# Notice types to fetch and their category mappings
+# locale=0 is the only value that does not trigger the S2W SQL cast error.
+# locale=2057 (documented English value) and omitting locale both return HTTP 500.
+LOCALE = 0
+
+# Notice types confirmed to return HTTP 200 with locale=0 (May 2026 live test).
+# Types 1, 3, 4, 7, 24, 51, 52, 53 return HTTP 500 and are excluded.
 NOTICE_TYPES = {
     # ── OJEU / Above-threshold notices ───────────────────────────────────────
-    1:  ("Future Opportunity", "Prior Information Notice"),
     2:  ("Opportunity",        "Contract Notice"),
-    3:  ("Awarded Contract",   "Contract Award Notice"),
-    4:  ("Future Opportunity", "Prior Information Notice (Utilities)"),   # ← was missing
-    5:  ("Opportunity",        "Contract Notice (Utilities)"),            # ← was missing — heat networks, district energy
-    6:  ("Awarded Contract",   "Contract Award Notice (Utilities)"),      # ← was missing
-    7:  ("Future Opportunity", "Qualification Systems (Utilities)"),      # ← was missing — DPS
-    15: ("Awarded Contract",   "Voluntary Ex Ante Transparency"),         # ← was missing — direct awards
-    20: ("Awarded Contract",   "Modification Notice"),                    # ← was missing
-    21: ("Opportunity",        "Social and other Specific Services"),     # ← was missing — light-touch
-    24: ("Opportunity",        "Concession Notice"),                      # ← was missing — energy concessions
-    22: ("Opportunity",        "Social and other Specific Services (Utilities)"),  # ← utilities social/light-touch
-    23: ("Opportunity",        "Social and other Specific Services (Concessions)"), # ← concession social/light-touch
-    25: ("Awarded Contract",   "Concession Award Notice"),                           # ← concession awards
-    # ── Site notices / Below-threshold ───────────────────────────────────────
-    51: ("Opportunity",        "Website Invitation to Tender"),
-    52: ("Future Opportunity", "Website Prior Information Notice"),
-    53: ("Awarded Contract",   "Website Contract Award Notice"),
-    54: ("Opportunity",        "Sub Contract Pre Award"),                 # ← subcontract opps
+    5:  ("Opportunity",        "Contract Notice (Utilities)"),
+    6:  ("Awarded Contract",   "Contract Award Notice (Utilities)"),
+    15: ("Awarded Contract",   "Voluntary Ex Ante Transparency"),
+    20: ("Awarded Contract",   "Modification Notice"),
+    21: ("Opportunity",        "Social and other Specific Services"),
+    22: ("Opportunity",        "Social and other Specific Services (Utilities)"),
+    23: ("Opportunity",        "Social and other Specific Services (Concessions)"),
+    25: ("Awarded Contract",   "Concession Award Notice"),
+    # ── Sub-contract notices ─────────────────────────────────────────────────
+    54: ("Opportunity",        "Sub Contract Pre Award"),
     55: ("Awarded Contract",   "Sub Contract Post Award"),
     56: ("Awarded Contract",   "Sub Contract Award"),
 }
@@ -143,10 +149,8 @@ async def _fetch_month(
     params = {
         "dateFrom":   month_str,
         "noticeType": notice_type,
-        "outputType": 0,       # OCDS format
-        # locale omitted — defaults to English (2057) server-side
-        # Passing locale as an integer causes a SQL type conversion error
-        # on the Sell2Wales server (nvarchar to float cast failure)
+        "outputType": 0,      # OCDS format
+        "locale":     LOCALE, # locale=0 is the only value that avoids the S2W SQL cast error
     }
 
     try:
@@ -330,7 +334,7 @@ async def fetch_notice_by_ocid(ocid: str) -> Optional[Tender]:
     Fetch a single S2W notice family by OCID via the /v1/Notice endpoint.
     Returns a parsed (unscored) Tender, or None if not found.
     """
-    params = {"id": ocid, "outputType": 0}
+    params = {"id": ocid, "outputType": 0, "locale": LOCALE}
     headers = {
         "Accept": "application/json",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
