@@ -62,9 +62,19 @@ async def refresh_all(
         prev_by_source.setdefault(src, []).append(t)
 
     # ── Concurrent fetch ──────────────────────────────────────────────────────
+    # Each source is wrapped in a 10-minute timeout so a hung source (e.g. FaT
+    # during a sustained DNS outage) cannot block the cache write for other sources.
+    SOURCE_TIMEOUT_S = 600
+
+    async def _fetch_with_timeout(fn, client, label):
+        try:
+            return await asyncio.wait_for(fn(client, days_back=days_back), timeout=SOURCE_TIMEOUT_S)
+        except asyncio.TimeoutError:
+            raise Exception(f"{label} timed out after {SOURCE_TIMEOUT_S}s")
+
     async with httpx.AsyncClient(follow_redirects=True) as client:
         results = await asyncio.gather(
-            *[fn(client, days_back=days_back) for _, _, fn in _SOURCE_INFO],
+            *[_fetch_with_timeout(fn, client, label) for _, label, fn in _SOURCE_INFO],
             return_exceptions=True,
         )
 

@@ -285,9 +285,11 @@ def _notice_priority(tender) -> int:
 
 # ── Rate limiting constants ───────────────────────────────────────────────────
 INTER_PAGE_DELAY_S = 1.5        # Proactive delay between pages (prevents triggering 429)
-RETRY_BACKOFF_BASE = 60         # Initial backoff on 429 (seconds)
-RETRY_BACKOFF_MULTIPLIER = 2    # Each retry doubles the wait: 60s → 120s → 240s
-MAX_RETRIES = 3                 # Maximum retry attempts before giving up on a page
+RETRY_BACKOFF_BASE = 60         # Initial backoff on HTTP 429 (seconds)
+RETRY_BACKOFF_MULTIPLIER = 2    # Each 429 retry doubles the wait: 60s → 120s → 240s
+MAX_RETRIES = 3                 # Maximum retry attempts on 429 before stopping a stage
+NETWORK_ERROR_RETRY_DELAY_S = 10  # Short fixed delay for DNS/connection errors — no point waiting 60s+ for a DNS failure
+MAX_NETWORK_RETRIES = 2           # Give up quickly on network errors; don't block the refresh for minutes
 
 
 async def _fetch_stage(
@@ -401,15 +403,17 @@ async def _fetch_stage(
 
             except httpx.RequestError as e:
                 retry_count += 1
-                if retry_count <= MAX_RETRIES:
-                    wait_s = RETRY_BACKOFF_BASE * (RETRY_BACKOFF_MULTIPLIER ** (retry_count - 1))
+                if retry_count <= MAX_NETWORK_RETRIES:
                     logger.warning(
-                        "FaT request error (stage=%s, page=%d, attempt=%d/%d) — retrying in %ds: %s",
-                        stage, page, retry_count, MAX_RETRIES, wait_s, e,
+                        "FaT network error (stage=%s, page=%d, attempt=%d/%d) — retrying in %ds: %s",
+                        stage, page, retry_count, MAX_NETWORK_RETRIES, NETWORK_ERROR_RETRY_DELAY_S, e,
                     )
-                    await asyncio.sleep(wait_s)
+                    await asyncio.sleep(NETWORK_ERROR_RETRY_DELAY_S)
                 else:
-                    logger.warning("FaT request error (stage=%s, page=%d): %s — giving up", stage, page, e)
+                    logger.warning(
+                        "FaT network error (stage=%s, page=%d): %s — giving up on stage",
+                        stage, page, e,
+                    )
                     url = None
                     break
             except Exception as e:
