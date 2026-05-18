@@ -19,6 +19,8 @@ COMPETITORS: dict[str, str] = {
     "regen sw":                "Regen",
     "regen":                   "Regen",
     "living places":           "Living Places",
+    "vital energi limited":    "Vital Energi",
+    "vital energi":            "Vital Energi",
 }
 
 # Pre-compiled whole-word patterns (avoids "regen" matching "regeneration")

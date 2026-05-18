@@ -653,6 +653,7 @@ const COMPETITOR_COLORS = {
   "Element Energy":                "#ff7070",
   "Regen":                         "#00c878",
   "Living Places":                 "#ff9f5b",
+  "Vital Energi":                  "#e040fb",
 };
 
 function CompetitorRow({ tender, onClick, selected }) {
