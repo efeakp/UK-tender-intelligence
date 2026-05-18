@@ -1,0 +1,197 @@
+{
+    "uri": "https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages/032703-2026",
+    "version": "1.1",
+    "extensions": [
+        "https://standard.open-contracting.org/profiles/eu/latest/en/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_amendment_rationale_classifications_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_budget_breakdown_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_contract_completion_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_documentation_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_pagination_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_suitability_extension/master/extension.json",
+        "https://raw.githubusercontent.com/portaledcahn/ocds_Links_extension/main/extension.json",
+        "https://raw.githubusercontent.com/cabinetoffice/ocds_uk_extension/main/extension.json"
+    ],
+    "publishedDate": "2026-04-10T10:50:13+01:00",
+    "publisher": {
+        "name": "Cabinet Office",
+        "scheme": "GB-GOR",
+        "uid": "D2",
+        "uri": "https://www.gov.uk/government/organisations/cabinet-office"
+    },
+    "license": "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "publicationPolicy": "https://www.gov.uk/government/publications/open-contracting",
+    "releases": [
+        {
+            "ocid": "ocds-h6vhtk-067fb8",
+            "id": "032703-2026",
+            "tag": [
+                "tender"
+            ],
+            "date": "2026-04-10T10:50:13+01:00",
+            "initiationType": "tender",
+            "parties": [
+                {
+                    "name": "Harrogate Town Council",
+                    "id": "GB-PPON-PDTL-7248-GWZW",
+                    "identifier": {
+                        "scheme": "GB-PPON",
+                        "id": "PDTL-7248-GWZW"
+                    },
+                    "address": {
+                        "streetAddress": "Harrogate Community House, 46-50 East Parade",
+                        "locality": "Harrogate",
+                        "postalCode": "HG1 5LT",
+                        "country": "GB",
+                        "countryName": "United Kingdom",
+                        "region": "UKE22"
+                    },
+                    "contactPoint": {
+                        "name": "Mrs Iona Taylor",
+                        "email": "tenders@harrogatetowncouncil.gov.uk",
+                        "telephone": "01423 642542"
+                    },
+                    "roles": [
+                        "buyer"
+                    ],
+                    "details": {
+                        "url": "https://harrogatetowncouncil.gov.uk/",
+                        "classifications": [
+                            {
+                                "scheme": "UK_CA_TYPE",
+                                "id": "publicAuthoritySubCentralGovernment",
+                                "description": "Public authority - sub-central government"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "buyer": {
+                "id": "GB-PPON-PDTL-7248-GWZW",
+                "name": "Harrogate Town Council"
+            },
+            "tender": {
+                "id": "ocds-h6vhtk-067fb8",
+                "legalBasis": {
+                    "id": "2023/54",
+                    "scheme": "UKPGA",
+                    "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+                },
+                "title": "HARROGATE TOWN DISTRICT HEATING PROJECT - Feasibility Study",
+                "description": "It is the intention of Harrogate Town Council, as the Buyer, to appoint the services of a Supplier of district heating technical consultancy to undertake a Feasibility Study compliant with the GB Energy Community Energy Fund Feasibility Report Structure. \nThe Town Council was informed in December 2025 that its application to GB Energy Community Fund for this Stage 1 feasibility study was successful. The outcome of an ITT for technical services to deliver the feasibility study, undertaken in August-September 2025, resulted in Tomson Consulting Ltd being appointed in January 2026.  \nTomson Consulting Ltd entered liquidation in March 2026, and the Town Council has subsequently agreed to go back to the market with a new ITT. \nThe remainder of the Feasibility Study is to be planned and delivered using a best-practice project management process with engagement of relevant local stakeholders and aligned with the requirements of the Buyer.\nPlease refer to the ITT documents, including project specification, for essential information prior to tendering.\nThe estimated total value of the contract is £33,721 (excluding VAT).",
+                "status": "active",
+                "items": [
+                    {
+                        "id": "1",
+                        "additionalClassifications": [
+                            {
+                                "scheme": "CPV",
+                                "id": "09323000",
+                                "description": "District heating"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "79314000",
+                                "description": "Feasibility study"
+                            }
+                        ],
+                        "deliveryAddresses": [
+                            {
+                                "region": "UKE2",
+                                "country": "GB",
+                                "countryName": "United Kingdom"
+                            }
+                        ],
+                        "relatedLot": "1"
+                    }
+                ],
+                "value": {
+                    "amountGross": 40465.20,
+                    "amount": 33721,
+                    "currency": "GBP"
+                },
+                "procurementMethod": "open",
+                "procurementMethodDetails": "Below threshold - open competition",
+                "mainProcurementCategory": "services",
+                "aboveThreshold": false,
+                "submissionMethodDetails": "tenders@harrogatetowncouncil.gov.uk",
+                "submissionTerms": {
+                    "electronicSubmissionPolicy": "notAllowed"
+                },
+                "tenderPeriod": {
+                    "endDate": "2026-05-08T23:59:59+01:00"
+                },
+                "enquiryPeriod": {
+                    "endDate": "2026-04-24T23:59:59+01:00"
+                },
+                "lots": [
+                    {
+                        "id": "1",
+                        "status": "active",
+                        "value": {
+                            "amountGross": 40465.20,
+                            "amount": 33721,
+                            "currency": "GBP"
+                        },
+                        "awardCriteria": {
+                            "criteria": [
+                                {
+                                    "type": "quality",
+                                    "name": "Bidder Experience",
+                                    "numbers": [
+                                        {
+                                            "number": 30,
+                                            "weight": "percentageExact"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "quality",
+                                    "name": "Technical Proposal",
+                                    "numbers": [
+                                        {
+                                            "number": 50,
+                                            "weight": "percentageExact"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "price",
+                                    "name": "Commercial Proposal",
+                                    "numbers": [
+                                        {
+                                            "number": 20,
+                                            "weight": "percentageExact"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        "contractPeriod": {
+                            "startDate": "2026-05-14T00:00:00+01:00",
+                            "endDate": "2026-12-31T23:59:59Z"
+                        }
+                    }
+                ],
+                "documents": [
+                    {
+                        "id": "A-14581",
+                        "documentType": "biddingDocuments",
+                        "url": "https://www.find-tender.service.gov.uk/Notice/Attachment/A-14581",
+                        "format": "application/pdf"
+                    },
+                    {
+                        "id": "032703-2026",
+                        "documentType": "tenderNotice",
+                        "noticeType": "UK4",
+                        "description": "Tender notice on Find a Tender",
+                        "url": "https://www.find-tender.service.gov.uk/Notice/032703-2026",
+                        "datePublished": "2026-04-10T10:50:13+01:00",
+                        "format": "text/html"
+                    }
+                ]
+            },
+            "language": "en"
+        }
+    ]
+}

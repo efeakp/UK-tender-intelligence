@@ -1,0 +1,259 @@
+) — Find a Tender:1497 | Contracts Finder:87 | Sell2Wales:0 | Public Contracts Scotland:1534
+2026-05-16 17:52:36  INFO      app.main  Cache warm-up complete: 3118 tenders
+WARNING:  WatchFiles detected changes in 'app\services\sell2wales.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+2026-05-16 18:40:33  INFO      app.services.scheduler  Scheduler stopped
+2026-05-16 18:40:33  INFO      app.main  Nordic Energy Tender API shut down
+2026-05-16 18:40:33  INFO      apscheduler.scheduler  Scheduler has been shut down
+INFO:     Application shutdown complete.
+INFO:     Finished server process [30328]
+WARNING:  WatchFiles detected changes in 'app\routers\digest.py', 'app\services\scorer.py', 'app\services\sell2wales.py', 'app\routers\tenders.py', 'app\config.py'. Reloading...
+INFO:     Started server process [31748]
+INFO:     Waiting for application startup.
+2026-05-16 18:40:34  INFO      app.main  Nordic Energy Tender API starting up (env=development)
+2026-05-16 18:40:34  INFO      apscheduler.scheduler  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-16 18:40:34  INFO      apscheduler.scheduler  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-16 18:40:34  INFO      apscheduler.scheduler  Added job "Daily tender refresh" to job store "default"
+2026-05-16 18:40:34  INFO      apscheduler.scheduler  Added job "Daily tender digest" to job store "default"
+2026-05-16 18:40:34  INFO      apscheduler.scheduler  Scheduler started
+2026-05-16 18:40:34  INFO      app.services.scheduler  Scheduler started — next refresh: 2026-05-17 10:15:00+00:00
+2026-05-16 18:40:34  INFO      app.main  Cache warm-up starting in background…
+INFO:     Application startup complete.
+ERROR:    Traceback (most recent call last):
+  File "C:\Users\EkeAkpovwovwo\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\EkeAkpovwovwo\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\EkeAkpovwovwo\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\EkeAkpovwovwo\AppData\Local\Programs\Python\Python313\Lib\asyncio\runners.py", line 123, in run
+    raise KeyboardInterrupt()
+KeyboardInterrupt
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\EkeAkpovwovwo\Documents\tender\nordic-tender-api\venv\Lib\site-packages\starlette\routing.py", line 700, in lifespan
+    await receive()
+  File "C:\Users\EkeAkpovwovwo\Documents\tender\nordic-tender-api\venv\Lib\site-packages\uvicorn\lifespan\on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\EkeAkpovwovwo\AppData\Local\Programs\Python\Python313\Lib\asyncio\queues.py", line 186, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+INFO:     Started server process [29808]
+INFO:     Waiting for application startup.
+2026-05-16 18:40:46  INFO      app.main  Nordic Energy Tender API starting up (env=development)
+2026-05-16 18:40:46  INFO      apscheduler.scheduler  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-16 18:40:46  INFO      apscheduler.scheduler  Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-05-16 18:40:46  INFO      apscheduler.scheduler  Added job "Daily tender refresh" to job store "default"
+2026-05-16 18:40:46  INFO      apscheduler.scheduler  Added job "Daily tender digest" to job store "default"
+2026-05-16 18:40:46  INFO      apscheduler.scheduler  Scheduler started
+2026-05-16 18:40:46  INFO      app.services.scheduler  Scheduler started — next refresh: 2026-05-17 10:15:00+00:00
+2026-05-16 18:40:46  INFO      app.main  Cache warm-up starting in background…
+INFO:     Application startup complete.
+2026-05-16 18:40:46  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=1&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:46  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=1): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=1&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:46  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=2&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:46  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=2): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=2&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:46  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00%3A00%3A00&limit=100&stages=pipeline "HTTP/1.1 400 Bad Request"
+2026-05-16 18:40:46  WARNING   app.services.find_a_tender  FaT HTTP error (stage=pipeline, page=0): Client error '400 Bad Request' for url 'https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00%3A00%3A00&limit=100&stages=pipeline'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
+2026-05-16 18:40:46  INFO      app.services.find_a_tender  FaT stage=pipeline: fetched 0 tenders (0 pages) | none
+2026-05-16 18:40:46  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=3&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:46  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=3): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=3&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=4&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:47  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=4): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=4&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=5&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=6&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=7&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:47  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=7): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=7&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: POST https://www.contractsfinder.service.gov.uk/Published/Notices/OCDS/Search "HTTP/1.1 200 OK"
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=15&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:47  INFO      app.services.contracts_finder  Contracts Finder: fetched 99 tenders (1 pages) | Awarded Contract: 67 | Early Engagement: 1 | Opportunity: 31
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=20&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:47  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=20): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=20&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=21&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:47  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=21): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=21&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=24&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:47  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=24): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=24&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=22&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=23&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=25&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=51&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:47  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=51): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=51&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:47  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00%3A00%3A00&limit=100&stages=planning "HTTP/1.1 200 OK"
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=52&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=52): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=52&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=53&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=05-2026, type=53): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=53&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=54&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=55&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=05-2026&noticeType=56&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=1&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=1): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=1&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=2&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=2): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=2&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=3&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=3): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=3&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=4&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=4): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=4&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=5&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=6&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=7&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=7): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=7&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=15&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:48  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=20&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:48  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=20): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=20&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=21&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:49  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=21): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=21&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=24&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:49  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=24): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=24&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=22&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=23&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=25&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=51&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:49  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=51): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=51&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=52&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:49  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=52): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=52&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=53&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:49  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=04-2026, type=53): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=53&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=54&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=55&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2026&noticeType=56&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=1&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:49  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=1): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=1&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=2&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:49  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=2): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=2&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:49  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=1&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=3&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=3): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=3&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=4&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=4): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=4&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=5&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=6&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=7&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=7): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=7&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00:00:00&limit=100&stages=planning&updatedTo=2026-05-16T18:40:46&cursor=dXBkYXRlZEZyb209MjAyNi0wMy0xN1QwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo0NnxuZXh0Q3Vyc29yPTU0MDA5MA== "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=15&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=15): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=15&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      app.services.find_a_tender  FaT stage=planning: fetched 183 tenders (2 pages) | Future Opportunity: 183
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=20&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=20): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=20&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=2&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=21&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=21): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=21&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=24&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=24): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=24&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=22&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=23&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=25&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=51&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=51): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=51&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=52&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=52): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=52&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=3&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:50  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=53&outputType=0 "HTTP/1.1 500 Internal Server Error"
+2026-05-16 18:40:50  WARNING   app.services.sell2wales  Sell2Wales HTTP error (month=03-2026, type=53): Server error '500 Internal Server Error' for url 'https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=53&outputType=0'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-05-16 18:40:51  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=54&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:51  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=55&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:51  INFO      httpx  HTTP Request: GET https://api.sell2wales.gov.wales/v1/Notices?dateFrom=03-2026&noticeType=56&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:51  INFO      app.services.sell2wales  Sell2Wales: fetched 0 tenders (3 months) |
+2026-05-16 18:40:51  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=5&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:51  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=6&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:51  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00%3A00%3A00&limit=100&stages=tender "HTTP/1.1 200 OK"
+2026-05-16 18:40:54  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00:00:00&limit=100&stages=tender&updatedTo=2026-05-16T18:40:50&cursor=dXBkYXRlZEZyb209MjAyNi0wMy0xN1QwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1MHxuZXh0Q3Vyc29yPTU0NTQyNA== "HTTP/1.1 200 OK"
+2026-05-16 18:40:54  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=101&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:54  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=102&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:55  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=103&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:40:56  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00:00:00&limit=100&stages=tender&updatedTo=2026-05-16T18:40:50&cursor=dXBkYXRlZEZyb209MjAyNi0wMy0xN1QwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1MHxuZXh0Q3Vyc29yPTUzOTc0NQ== "HTTP/1.1 200 OK"
+2026-05-16 18:40:58  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-03-17T00:00:00&limit=100&stages=tender&updatedTo=2026-05-16T18:40:50&cursor=dXBkYXRlZEZyb209MjAyNi0wMy0xN1QwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1MHxuZXh0Q3Vyc29yPTUzMzE0OQ== "HTTP/1.1 200 OK"
+2026-05-16 18:40:58  INFO      app.services.find_a_tender  FaT stage=tender: fetched 341 tenders (4 pages) | Opportunity: 341
+2026-05-16 18:40:59  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00%3A00%3A00&limit=100&stages=award "HTTP/1.1 200 OK"
+2026-05-16 18:41:01  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=05-2026&noticeType=104&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:03  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU1MDM0MA== "HTTP/1.1 200 OK"
+2026-05-16 18:41:06  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0OTE5OQ== "HTTP/1.1 200 OK"
+2026-05-16 18:41:07  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=1&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:08  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=2&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:08  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=3&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:09  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=5&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:09  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0ODAwNg== "HTTP/1.1 200 OK"
+2026-05-16 18:41:10  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=6&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:12  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0NjgyMg== "HTTP/1.1 200 OK"
+2026-05-16 18:41:14  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0NjAxOQ== "HTTP/1.1 200 OK"
+2026-05-16 18:41:15  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=101&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:16  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=102&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:17  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=103&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:18  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0NTUxOA== "HTTP/1.1 200 OK"
+2026-05-16 18:41:20  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0NDgwMA== "HTTP/1.1 200 OK"
+2026-05-16 18:41:23  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0NDA2NQ== "HTTP/1.1 200 OK"
+2026-05-16 18:41:26  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0MzE3OQ== "HTTP/1.1 200 OK"
+2026-05-16 18:41:28  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0MjQ4MA== "HTTP/1.1 200 OK"
+2026-05-16 18:41:30  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0MTUyNA== "HTTP/1.1 429 Too Many Requests"
+2026-05-16 18:41:30  WARNING   app.services.find_a_tender  FaT rate-limited (stage=award, page=11, attempt=1/3) — Retry-After header says 120s
+2026-05-16 18:41:32  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=04-2026&noticeType=104&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:39  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=1&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:40  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=2&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:40  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=3&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:41  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=5&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:45  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=6&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:50  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=101&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:51  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=102&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:41:52  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=103&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:42:09  INFO      httpx  HTTP Request: GET https://api.publiccontractsscotland.gov.uk/v1/Notices?dateFrom=03-2026&noticeType=104&outputType=0 "HTTP/1.1 200 OK"
+2026-05-16 18:42:09  INFO      app.services.public_contracts_scotland  Public Contracts Scotland: fetched 2239 tenders (3 months) | Awarded Contract: 1561 | Future Opportunity: 164 | Opportunity: 514
+2026-05-16 18:43:41  WARNING   app.services.find_a_tender  FaT request error (stage=award, page=11, attempt=2/3) — retrying in 120s: [Errno 11001] getaddrinfo failed
+2026-05-16 18:45:53  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0MTUyNA== "HTTP/1.1 200 OK"
+2026-05-16 18:45:56  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTU0MDU5Mw== "HTTP/1.1 200 OK"
+2026-05-16 18:45:58  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTUzOTc1Mw== "HTTP/1.1 200 OK"
+2026-05-16 18:46:00  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTUzOTIwOA== "HTTP/1.1 200 OK"
+2026-05-16 18:46:03  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTUzODQ2Nw== "HTTP/1.1 200 OK"
+2026-05-16 18:46:05  INFO      httpx  HTTP Request: GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?updatedFrom=2026-04-01T00:00:00&limit=100&stages=award&updatedTo=2026-05-16T18:40:58&cursor=dXBkYXRlZEZyb209MjAyNi0wNC0wMVQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0wNS0xNlQxODo0MDo1OHxuZXh0Q3Vyc29yPTUzNzYyMQ== "HTTP/1.1 200 OK"
+2026-05-16 18:46:05  INFO      app.services.find_a_tender  FaT stage=award: fetched 1677 tenders (17 pages) | Awarded Contract: 1677
+2026-05-16 18:46:05  INFO      app.services.find_a_tender  Find a Tender: fetched 2201 tenders total | Awarded Contract: 1677 | Future Opportunity: 183 | Opportunity: 341
+2026-05-16 18:46:07  INFO      app.services.aggregator  Refresh complete: 3760 tenders from 4539 raw in 321.7s (0 errors) — Find a Tender:1972 | Contracts Finder:87 | Sell2Wales:0 | Public Contracts Scotland:1701
+2026-05-16 18:46:07  INFO      app.main  Cache warm-up complete: 3760 tenders

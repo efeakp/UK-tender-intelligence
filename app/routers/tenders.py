@@ -29,19 +29,20 @@ def _get_cached_tenders() -> list[Tender]:
 
 @router.get("", response_model=TenderListResponse, summary="List tenders")
 async def list_tenders(
-    q:          Optional[str] = Query(None,       description="Search across title, authority, description"),
-    source:     Optional[str] = Query(None,       description="Filter by source"),
-    scope:      Optional[str] = Query(None,       description="Filter by matched business scope label"),
-    category:   Optional[str] = Query(None,       description="Filter by notice category"),
-    min_score:  int           = Query(default=5,  ge=0, le=10, description="Minimum relevance score"),
-    region:     Optional[str] = Query(None,       description="Filter by NUTS delivery region code (e.g. UKE for Yorkshire, UKD for North West)"),
-    page:       int           = Query(default=1,  ge=1),
-    page_size:  int           = Query(default=25, ge=1, le=2000, description="Results per page"),
-    sort_by:    str           = Query(default="score", description="score | deadline | published | value"),
-    sort_dir:   str           = Query(default="desc",  description="asc | desc"),
+    q:              Optional[str]  = Query(None,       description="Search across title, authority, description"),
+    source:         Optional[str]  = Query(None,       description="Filter by source"),
+    scope:          Optional[str]  = Query(None,       description="Filter by matched business scope label"),
+    category:       Optional[str]  = Query(None,       description="Filter by notice category"),
+    min_score:      int            = Query(default=5,  ge=0, le=10, description="Minimum relevance score"),
+    region:         Optional[str]  = Query(None,       description="Filter by NUTS delivery region code (e.g. UKE for Yorkshire, UKD for North West)"),
+    competitor_win: Optional[bool] = Query(None,       description="Filter to competitor wins only (true) or exclude them (false)"),
+    page:           int            = Query(default=1,  ge=1),
+    page_size:      int            = Query(default=25, ge=1, le=2000, description="Results per page"),
+    sort_by:        str            = Query(default="score", description="score | deadline | published | value"),
+    sort_dir:       str            = Query(default="desc",  description="asc | desc"),
 ):
     tenders = _get_cached_tenders()
-    tenders = apply_filters(tenders, q=q, source=source, scope=scope, category=category, min_score=min_score, region=region)
+    tenders = apply_filters(tenders, q=q, source=source, scope=scope, category=category, min_score=min_score, region=region, competitor_win=competitor_win)
     tenders = apply_sort(tenders, sort_by=sort_by, sort_dir=sort_dir)
 
     total        = len(tenders)

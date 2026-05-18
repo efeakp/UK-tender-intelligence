@@ -27,6 +27,7 @@ def apply_filters(
     category: Optional[str] = None,
     min_score: int = 0,
     region: Optional[str] = None,
+    competitor_win: Optional[bool] = None,
 ) -> List[Tender]:
     if q:
         q_lower = q.lower()
@@ -51,6 +52,8 @@ def apply_filters(
             t for t in tenders
             if any(n.startswith(region_upper) for n in (t.nuts_codes or []))
         ]
+    if competitor_win is not None:
+        tenders = [t for t in tenders if t.competitor_win == competitor_win]
     return tenders
 
 

@@ -1,0 +1,459 @@
+Contracts Finder API Help Page
+Contracts Finder Update
+Contracts Finder API is updating. Version 2 of the API attempts to improve the structure and standardise approaches
+to aid the user in posting and retrieving notices. For more details, please visit Version 2.
+Introduction
+This document sets out to describe the mechanisms by which eOpportunity providers and others can feed their
+opportunities to the Contracts Finder Service. This can be done via this WebAPI individually at the point of
+publication, or via bulk import at a convenient time. Both mechanisms use common interfaces, with the latter
+accepting collections of data in one go.
+Scope and purpose
+The purpose of this document is to describe the interfaces available to approved external notice publication providers
+that enable them to publish their notices in the Contracts Finder service.
+Notice types that can be uploaded are:
+Future Opportunities, i.e. pre-procurement notices to publicise forthcoming activity
+Live Opportunities, i.e. invitations to tender
+Awards, i.e. transparency publications of awarded contract details
+Early Engagements, i.e. notices of intent which invite discussion on the way forward
+Whilst this is primarily a specification document to describe the inbound interface, some consideration shall be given
+to explain how particular aspects of the specification are handled by the inbound feed, specifically around the
+handling of category and region information. It shall describe, where appropriate, any specific data types and field
+length limitations placed upon external providers, in order that their opportunities are aggregated within the
+Contracts Finder service.
+This document shall provide an overview of how warnings and error messages shall be communicated to providers,
+but at this time shall not include specific warnings or errors.
+Technical Specification
+REST
+Representational State Transfer (REST) is an architectural style based on the architecture of the Web and embraces
+HTTP. Clients initiate requests to servers; servers process requests and return appropriate responses. Requests and
+responses are built around the transfer of "representations" of "resources". The central resource with respect to the
+Contracts Finder service is the procurement opportunity.
+Unique provider identifier
+There is a potential for confusion since each notice will have 2 unique identifiers. One is provided by the creator in a
+format meaningful to them and must be unique within the creating organisation. Another is assigned internally by
+Contracts Finder, which will be a GUID.
+1/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+So, upon creating a new notice, a unique provider identifier needs to be supplied by the creator. This identifier must
+not have been used previously by the originating organisation, otherwise a validation error occurs. On successful
+creation of a notice, a new unique identifier (in GUID form) is returned. This new unique reference is then used
+throughout the Web API to perform further operations on the notice.
+Security and Authorisation
+Authentication is required to access certain parts of the Web API. To obtain an access token you must POST to the
+token endpoint. The POST request must include a basic authorization header containing username:password in
+base-64 encoded format. It must also have a body with type application/x-www-form-urlencoded specifying
+grant_type=client_credentials. The username and password are the Sid4Gov login credentials.
+In response you are granted an access token, a sample response may look like:
+{ "access_token":"2YotnFZFEjr1zCsicMWpAA", "expires_in":3600, "token_type":"bearer" }
+Headers
+To request either JSON or XML MIME types the request needs to contain the appropriate Accept header,
+application/json or application/xml respectively.
+To access authenticated endpoints a bearer token is needed in the HTTP authorization header, this is the returned
+access_token described in section 2.4, for example "bearer 2YotnFZFEjr1zCsicMWpAA".
+Error Handling
+The standard HTTP status codes are used to indicate errors throughout the system from invalid authentication to
+validation errors. Please see http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html for details on the status codes.
+For specific validation errors a 400 status code response is returned with a list of validation errors.
+The following is an example:
+<ArrayOfValidationError>
+<ValidationError>
+<Message i:nil="true"/>
+<Code>NotFound</Code>
+<Property>PublishedNoticeId</Property>
+</ValidationError>
+</ArrayOfValidationError>
+Line Breaks
+Some text fields support the use of line breaks to allow long passages to be divided into paragraphs. For example,
+the description field in notices.
+In order to include a line break you need to insert a CR/LF combination. In JSON this is encoded as "\r\n", and in XML
+it is encoded as "&#13;&#10;".
+Mappings
+Delivery Location
+2/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+The region(s) of a notice applies to the location of works for the contract - the delivery location. Providers are asked
+to supply either one or more regions and/or postcode and/or a region of "Any Region". The provider must supply
+one, but choice is dependent on preference and the scope of the delivery.
+Postcode information provided shall be used to look-up geo-co-ordinates and a corresponding region.
+Email Addresses
+Email addresses must conform with the standard pattern, i.e. similar to given.family@domain.ext. There is no
+further validation checking.
+Country
+Country must be one "name" value selected from the countries API method
+There is no further validation checking.
+Dates and times
+Combined date-time values are used, formatted as YYYY-MM-DDThh:mm:ss, e.g. 2014-01-29T15:09:00Z for exactly
+3:09pm on 29 January 2014.
+The time part is included even for date-only fields.
+All times are local UK times, in GMT or BST depending on which is in effect on the date. Timezone information is
+appended to the date-time such that “Z” indicates GMT (October to March) and “+01:00” indicates BST (March to
+October).
+The time part is valid for the DeadlineDate field for notices published from 1 August 2020.
+Regions
+Region must be a list of one or more comma separated "name" values from the regions API method. Note that API
+names have commas removed and accented characters changed to normal ones compared with names shown on
+the website. For example, "Saint Helena Ascension and Tristan da Cunha" instead of "Saint Helena, Ascension and
+Tristan da Cunha", "Curacao" instead of "Curaçao" and "Saint Barthelemy" instead of "Saint Barthélemy".
+Type
+Valid notice types are defined by the NoticeType enumeration.
+OjeuContractType
+Valid contract types are defined by the OjeuContractType enumeration.
+ProcedureType
+Valid procedure types are defined by the ProcedureType enumeration.
+AwardedProcedureType
+A different set of procedure types is defined for awards - see the AwardedProcedureType enumeration.
+3/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+AnnexDOptionType
+Valid Annex D options are defined by the AnnexDOptionType enumeration.
+Mime Type
+Valid mime types are defined by MimeType enumeration.
+CPV codes
+For more information on CPV codes, see http://simap.europa.eu/codes-and-nomenclatures/codes-cpv/codes
+cpv_en.htm.
+Interface specification
+OcdsApi
+Methods for retrieving notices in OCDS compliant data formats.
+API
+Description
+GET Published/Notices/OCDS/Search?
+publishedFrom={publishedFrom}&publishedTo=
+{publishedTo}&stages={stages}&limit=
+{limit}&cursor={cursor}
+Search for published notice OCDS releases package with
+optional search criteria.
+GET Published/OCDS/Record/{ocid}
+Retrieves the OCDS record package from a provided ocid.
+GET Published/OCDS/Release/{id}
+Retrieves the OCDS release package from a provided id.
+GET Harvester/Notices/Data/CSV/Daily
+Retrieves the OCDS releases in CSV format for the current
+date.
+GET
+Harvester/Notices/Data/CSV/{year}/{month}/{day}
+Retrieves the OCDS releases in CSV format from a specific
+date.
+PostcodeApi
+Methods related to postal codes.
+API
+Description
+GET Postcode/Postcodes/{postCode}
+Retrieves a list of valid UK postcodes that start with the provided
+prefix.
+UserProfileApi
+Methods for creating, updating and deleting user profile information.
+4/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+API
+Description
+GET User/MyProfile
+Get the profile details for the signed in user, contained in a User
+object.
+POST User/MyProfile/Save
+Update the profile details for the signed in user.
+GET User/MyProfile/SavedSearch/GetAll
+Gets details of the saved searches associated with the signed in
+user. Returns a collection of SavedSearch objects, each representing
+a saved search.
+GET User/MyProfile/SavedSearch/Get?id=
+{id}
+Gets details of a saved search by its unique identifier. The requested
+information must be associated with the signed in user. Returns the
+requested SavedSearch object.
+POST User/MyProfile/SavedSearch/Update
+Updates an existing saved search associated with the signed in user.
+POST User/MyProfile/SavedSearch/Delete
+Deletes a number of saved searches associated with the signed in
+users. The saved searches to be deleted are identified by a
+collection of integers, each being the id of a saved search
+associated with the user.
+POST User/MyProfile/SavedSearch/Create
+Creates a new saved search for the signed in user.
+GET User/MyProfile/WatchedNotice/GetAll
+Gets details of all the watched notices for the signed in user,
+contained in a collection of WatchedNotice objects.
+GET User/MyProfile/WatchedNotice/Get?id=
+{id}
+Gets details of the watched notices with the given identifier. The
+requested watched notice must be associated with the signed in
+user.
+POST
+User/MyProfile/WatchedNotice/Create
+Creates a new watched notice for the signed in user.
+POST
+User/MyProfile/WatchedNotice/Update
+Updates an existing watched notice associated with the signed in
+user.
+POST
+User/MyProfile/WatchedNotice/Delete
+Deletes a number of watched notices associated with the signed in
+user. The watched notices to be deleted are identified by a
+collection of integers, each being the id of a watched notice
+associated with the user.
+PublishNoticeApi
+Methods for managing published notices.
+5/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+API
+Description
+GET Published/AdditionalDetails/{id}
+Gets a single additional detail object by its unique identifier. The
+identifier is a GUID. The returned additional detail is contained
+in a AdditionalDetail object.
+Version 2 = GET
+api/rest/2/get_published_notice/{MimeType}/{id}
+Version 1 = GET Published/Notice/{id}
+Gets a published notice by its unique identifier, which is a GUID.
+The returned notice is described by a FullNotice xml object.
+GET Published/Notice/OCDS/{id}
+Gets the OCDS for the provided notice identity.
+POST Published/Notices
+Gets a collection of published for the provided list of identities.
+POST Published/Notice/Withdraw
+Withdraws the published notice identified by the provided
+identifier. A reason needs to be provided and is recorded
+against the withdrawal action.
+POST Published/Notice/Withdraw/2
+Withdraws the published notice identified by the provided
+identifier. A reason needs to be provided and is recorded
+against the withdrawal action (version:2).
+GET Published/CpvCodes/{id}
+Gets a collection of CPV codes associated with the identified
+notice. The provided id should be a GUID that uniquely
+identifies a published notice.
+GET Published/LogNoticeView/{id}
+Log a view event for the published notice with the given
+identity.
+GET Published/NoticeVersions/{id}
+Gets historical version details for the published notice identified
+by the provided id.
+NoticeApi
+Methods for managing draft notices.
+API
+Description
+GET Draft/FindNoticesForUser?noticeType=
+{noticeType}&noticeStatus=
+{noticeStatus}&filter={filter}&page=
+{page}&numberPerPage=
+{numberPerPage}&showMyNoticesOnly=
+{showMyNoticesOnly}
+Returns details of the notices that match the specified search
+criteria. Only notices associated with the organization of the current
+user are included. The current user must be a buyer in order to use
+this service.
+Version 2 = GET
+api/rest/2/get_draft_notice/{MimeType}/{id}
+Version 1 = GET Draft/Notice/{id}
+Gets the draft notice identified by the provided GUID.
+6/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+API
+Description
+POST Draft/Notices
+Gets a collection of draft for the provided list of identities.
+Version 2 = POST
+api/rest/2/create_draft_notice/{MimeType}
+Version 1 = POST Draft/Notice/Add?
+isPreAwarded={isPreAwarded}
+This operation is used to upload an individual notice. The payload
+consists of a single notice definition, configured to be an Early
+Engagement, a Future Opportunity, or a Live Opportunity.
+POST Draft/Notice/Copy
+This operation will create a copy of an identified notice using the
+provided new notice identifier. The notice being copied is identified
+by the internally assigned GUID. The provided identifier should be
+the user-defined notice id, which cannot be the same as an existing
+notice - a new GUID will be assigned and returned to the caller.
+POST Draft/Notice/CopyAwarded
+This operation will create a copy of an identified awarded notice
+using the provided new notice identifier and the new type. The
+notice being copied is identified by the internally assigned GUID.
+The provided identifier should be the user-defined notice id, which
+cannot be the same as an existing notice - a new GUID will be
+assigned and returned to the caller.
+POST Draft/Notice/Convert
+Converts an existing future opportunity into a current opportunity.
+POST Draft/Notice/Update
+This operation allows an existing notice to be updated. A Notice
+object is provided including the notice id and its new state. The
+provided details will replace those currently stored.
+Version 2 = POST
+api/rest/2/publish_draft_notice/{MimeType}
+Version 1 = POST Draft/Notice/Publish
+This operation allows an existing notice to be published. This will
+make the current state of the notice visible to the public through
+the Contracts Finder online service. The publish request may
+include comments that are recorded against the publish action. If
+the VisibleToPublic flag is false, notifications will be suppressed to
+anybody watching this notice - this is only appropriate for minor
+modifications to existing notices.
+POST Draft/Notice/Validate
+This operation is used to simply validate the notice. This is used
+when validation has already failed after a user has attempted to
+publish the notice. Needed because we refresh the page if
+validation fails - losing the error messages.
+POST Draft/AdditionalDetail/Add
+This operation is to be used to upload additional information
+relating to a single notice. The payload consists of a single
+additional detail definition. The operation requires the identity of a
+previously created notice, with which the additional detail data will
+be associated. This requires the caller to have access to the GUID
+identifying the notice, which could be obtained using
+Draft/Notices/Lookup.
+7/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+API
+Description
+GET Draft/AdditionalDetails/{id}
+Gets a collection of AdditionalDetail objects associated with the
+specified notice. The notice is identified by its GUID.
+POST Draft/AdditionalDetail/Update
+This operation allows an individual additional detail to be updated.
+The provided AdditionalDetail object identifies the additional detail
+and describes its updated state.
+POST Draft/AdditionalDetail/Set
+This operation allows multiple additional details to be added or
+updated. The provided AdditionalDetails object contains all the new
+and updated AdditionalDetail objects.
+POST Draft/Notice/Delete
+This operation allows a draft notice to be deleted, as identified by
+the provided GUID. A draft notice cannot be deleted once it has
+been published. To remove a published notice from the Contracts
+Finder online service, use the Published/Notice/Withdraw
+operation.
+POST Draft/AdditionalDetail/Delete
+This operation allows an additional detail to be deleted, as
+identified by the provided GUID.
+GET Draft/AdditionalDetail/Attachment/{id}
+Get an attachment given its id. The return is an AdditionalDetail
+object containing all of the information necessary to create the file
+attachment.
+Version 2 = GET
+api/rest/2/get_draft_awards/{MimeType}/{id}
+Version 1 = GET Draft/Awards/{id}
+Gets all award details for the specified notice. This method will
+return multiple items if present. Multiple award details identify
+multiple suppliers associated with a single award.
+Version 2 = POST
+api/rest/2/add_draft_award/{MimeType}
+Version 1 = POST Draft/Award/Add
+This operation is used to award a single notice. The payload
+consists of a single award definition. The operation requires the
+identity of a previously created notice with which the award data
+will be associated. The caller needs to have access to the GUID
+identifying the notice - which could be obtained using
+Draft/Notices/Lookup.
+Version 2 = POST
+api/rest/2/update_draft_award/{MimeType}
+Version 1 = POST Draft/Award/Update
+This method allows the award details for a notice to be updated.
+The provided AwardDetail should identify the notice associated with
+the award and contain its updated state.
+POST Draft/Award/SetNoticeAwards
+This method allows multiple award details for a notice to be
+updated. The provided AwardDetails should identify the notice
+associated with the awards and contain the updated state.
+Version 2 = POST
+api/rest/2/import_draft_notices/{MimeType}
+Version 1 = POST Draft/Notices/Import
+This operation is to be used to upload multiple notices, including
+award information and additional data where relevant. Note that
+the operation may be used to upload notices with award
+information, but cannot be used to add award details to already
+8/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Contracts Finder API Help Page
+API
+Description
+existing notices. Similarly, uploaded notices may include additional
+data, but additional cannot be added to already existing notices.
+This is because the awarded and additional detail information
+supplied in the import is implicitly associated with an imported
+notice and there is no means to select a previously imported notice.
+Where a notice is awarded to multiple suppliers, this is indicated by
+providing multiple AwardDetail items. Note that only supplier
+specific information should vary between AwardDetail items 
+award-level information will be set by the first item only: i.e. Value,
+Start Date, End Date, Awarded Date, Procedure Type.
+POST Draft/Notices/ImportFlat
+This operation provides the same functionality as
+Draft/Notices/Import. However, the input format for this variant is
+simpler in structure, but is more restrictive.
+GET Draft/Notices/Lookup/{identifier}
+This operation is used to return the internal system ID for the
+specified notice(s). The notice of interest is indicated by passing in
+the user-defined unique identifier. (The user-defined identifier is
+specified by a user at creation, for example through the Contracts
+Finder online service). All notices that have an identifier beginning
+with the supplied text are returned. A collection of details are
+returned for the notices matching the seach criterion.
+GET Draft/Notices/Statistics
+Get basic statistics for signed in user's organisation notices.
+CountryApi
+Methods for retrieving country data.
+API
+Description
+GET Country/Countries
+Gets country data relevant to the Contracts Finder system.
+CpvCodeApi
+Methods for retrieving CPV Codes information.
+API
+Description
+GET CpvCodes/Children/{requestCode}
+Gets a collection of CPVCode objects where the parent code
+matches the supplied CPV code.
+GET CpvCodes/Parents/{requestCode}
+Returns any CPVCode object that is a parent of the supplied
+request code.
+GET CpvCodes/Sectors
+Gets a collection of the root CPVCode objects. These are the
+"sector" codes, beneath which all other CPV codes are arranged.
+9/10
+https://www.contractsfinder.service.gov.uk/apidocumentation
+5/1/26, 4:13 PM
+Description
+Contracts Finder API Help Page
+API
+GET CpvCodes/Codes/{codes}
+Gets a collection of CPVCode objects according to the provided,
+comma-separated list of CPV codes.
+GET CpvCodes/Search/{identifier}
+Gets a collection of CPVCode objects based on the supplied
+identifier. If the identifier is numeric then the lookup will match
+against the CPV code, otherwise it will match against the CPV
+description.
+SearchApi
+Methods to support searching the Contracts Finder notices.
+API
+Description
+Version 2 = POST
+api/rest/2/search_notices/{MimeType}
+Version 1 = POST Searches/Search
+Searches for notices based on the provided search criteria.
+RegionApi
+Methods related to region data.
+API
+Description
+GET Region/Regions
+Gets all Region data relevant to the Contracts Finder system.
+Authorisation
+Authorisation is based on the OAuth 2.0 client credentials grant .
+API
+Description
+POST token
+OAuth token end point

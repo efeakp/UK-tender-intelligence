@@ -474,6 +474,35 @@ function DetailPanel({ tender, onClose }) {
           <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.65)", lineHeight: "1.65", margin: 0 }}>{tender.description || "No description available."}</p>
         </div>
       </div>
+      {(tender.contact_name || tender.contact_email || tender.contact_phone || tender.contact_url) && (
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "8px" }}>Contact Point</div>
+          <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: "8px", padding: "12px 14px" }}>
+            {tender.contact_name && (
+              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", marginBottom: "5px" }}>
+                <span style={{ color: "rgba(255,255,255,0.35)", marginRight: "6px" }}>Name</span>{tender.contact_name}
+              </div>
+            )}
+            {tender.contact_email && (
+              <div style={{ fontSize: "12px", marginBottom: "5px" }}>
+                <span style={{ color: "rgba(255,255,255,0.35)", marginRight: "6px" }}>Email</span>
+                <a href={`mailto:${tender.contact_email}`} style={{ color: "#00e5a0", textDecoration: "none" }}>{tender.contact_email}</a>
+              </div>
+            )}
+            {tender.contact_phone && (
+              <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.7)", marginBottom: "5px" }}>
+                <span style={{ color: "rgba(255,255,255,0.35)", marginRight: "6px" }}>Phone</span>{tender.contact_phone}
+              </div>
+            )}
+            {tender.contact_url && (
+              <div style={{ fontSize: "12px" }}>
+                <span style={{ color: "rgba(255,255,255,0.35)", marginRight: "6px" }}>Web</span>
+                <a href={tender.contact_url} target="_blank" rel="noopener noreferrer" style={{ color: "#64a0ff", textDecoration: "none" }}>{tender.contact_url}</a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {tender.matched.length > 0 && (
         <div style={{ marginBottom: "20px" }}>
           <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "8px" }}>Matched Keywords</div>
@@ -613,6 +642,171 @@ function CategoryStrip({ tenders, activeCategory, onSelect }) {
   );
 }
 
+// ─── Competitor tracking ──────────────────────────────────────────────────────
+
+const COMPETITOR_COLORS = {
+  "Advanced Infrastructure":       "#64a0ff",
+  "City Science":                  "#00e5a0",
+  "Grid Edge":                     "#f5a142",
+  "Tibo Energy":                   "#b48ef5",
+  "Centre for Sustainable Energy": "#f5c842",
+  "Element Energy":                "#ff7070",
+  "Regen":                         "#00c878",
+  "Living Places":                 "#ff9f5b",
+};
+
+function CompetitorRow({ tender, onClick, selected }) {
+  const color = COMPETITOR_COLORS[tender.competitor_name] || "#aaa";
+  return (
+    <div
+      onClick={onClick}
+      style={{ cursor: "pointer", padding: "16px 20px", borderRadius: "10px", background: selected ? `${color}0d` : "rgba(255,255,255,0.03)", border: `1px solid ${selected ? color + "44" : "rgba(255,255,255,0.07)"}`, transition: "all 0.2s", marginBottom: "8px" }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.background = "rgba(255,255,255,0.055)"; }}
+      onMouseLeave={e => { if (!selected) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", gap: "6px", marginBottom: "6px", alignItems: "center", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "20px", background: `${color}22`, border: `1px solid ${color}55`, color, fontWeight: 700, letterSpacing: "0.05em" }}>
+              {tender.competitor_name}
+            </span>
+            <SourceBadge source={tender.source} />
+          </div>
+          <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "14px", color: "#f0ede8", lineHeight: "1.4", fontWeight: 400 }}>
+            {tender.title}
+          </div>
+          <div style={{ marginTop: "5px", fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>{tender.authority}</div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)" }}>{tender.value}</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", marginTop: "4px" }}>{formatDate(tender.published)}</div>
+        </div>
+      </div>
+      {(tender.contact_name || tender.contact_email) && (
+        <div style={{ marginTop: "8px", display: "flex", gap: "14px", fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+          {tender.contact_name  && <span>👤 {tender.contact_name}</span>}
+          {tender.contact_email && <span>✉ {tender.contact_email}</span>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContactPanel({ tender, onClose }) {
+  const color = COMPETITOR_COLORS[tender.competitor_name] || "#aaa";
+  const hasContact = tender.contact_name || tender.contact_email || tender.contact_phone || tender.contact_url;
+  return (
+    <div style={{ position: "sticky", top: "0", padding: "24px", background: "rgba(14,20,30,0.95)", borderRadius: "12px", border: `1px solid ${color}44`, backdropFilter: "blur(20px)", maxHeight: "90vh", overflowY: "auto" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" }}>
+        <span style={{ fontSize: "10px", padding: "2px 10px", borderRadius: "20px", background: `${color}22`, border: `1px solid ${color}55`, color, fontWeight: 700, letterSpacing: "0.05em" }}>
+          {tender.competitor_name}
+        </span>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: "18px", padding: "0", lineHeight: 1 }}>✕</button>
+      </div>
+      <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "18px", color: "#f0ede8", lineHeight: "1.35", marginBottom: "16px", fontWeight: 400 }}>
+        {tender.title}
+      </h2>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
+        {[
+          ["Authority", tender.authority],
+          ["Value",     tender.value],
+          ["Awarded",   formatDate(tender.published)],
+          ["Source",    tender.source],
+        ].map(([k, v]) => (
+          <div key={k} style={{ background: "rgba(255,255,255,0.04)", borderRadius: "8px", padding: "10px 12px" }}>
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "3px" }}>{k}</div>
+            <div style={{ fontSize: "13px", color: "#e8e4df" }}>{v}</div>
+          </div>
+        ))}
+      </div>
+      {hasContact && (
+        <div style={{ marginBottom: "20px", padding: "14px", borderRadius: "8px", background: `${color}0d`, border: `1px solid ${color}33` }}>
+          <div style={{ fontSize: "10px", color, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "10px", fontWeight: 700 }}>Contact Point</div>
+          {tender.contact_name && (
+            <div style={{ fontSize: "13px", color: "#e8e4df", marginBottom: "7px" }}>
+              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginRight: "8px" }}>Name</span>
+              {tender.contact_name}
+            </div>
+          )}
+          {tender.contact_email && (
+            <div style={{ fontSize: "13px", marginBottom: "7px" }}>
+              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginRight: "8px" }}>Email</span>
+              <a href={`mailto:${tender.contact_email}`} style={{ color: "#00e5a0", textDecoration: "none" }}>{tender.contact_email}</a>
+            </div>
+          )}
+          {tender.contact_phone && (
+            <div style={{ fontSize: "13px", color: "#e8e4df", marginBottom: "7px" }}>
+              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginRight: "8px" }}>Phone</span>
+              {tender.contact_phone}
+            </div>
+          )}
+          {tender.contact_url && (
+            <div style={{ fontSize: "13px" }}>
+              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase", letterSpacing: "0.06em", marginRight: "8px" }}>Web</span>
+              <a href={tender.contact_url} target="_blank" rel="noopener noreferrer" style={{ color: "#64a0ff", textDecoration: "none", wordBreak: "break-all" }}>{tender.contact_url}</a>
+            </div>
+          )}
+        </div>
+      )}
+      <a href={tender.url} target="_blank" rel="noopener noreferrer"
+        style={{ display: "block", textAlign: "center", padding: "11px", borderRadius: "8px", background: `${color}22`, border: `1px solid ${color}55`, color, textDecoration: "none", fontSize: "13px", fontWeight: 600, letterSpacing: "0.04em" }}>
+        View Award Notice →
+      </a>
+    </div>
+  );
+}
+
+function CompetitorTab({ tenders }) {
+  const [selected, setSelected] = useState(null);
+  const competitorWins = tenders.filter(t => t.competitor_win);
+
+  const byCompetitor = competitorWins.reduce((acc, t) => {
+    const name = t.competitor_name || "Unknown";
+    if (!acc[name]) acc[name] = [];
+    acc[name].push(t);
+    return acc;
+  }, {});
+
+  return (
+    <div className="fade-up">
+      {Object.keys(byCompetitor).length > 0 && (
+        <div style={{ display: "flex", gap: "10px", marginBottom: "24px", flexWrap: "wrap" }}>
+          {Object.entries(byCompetitor).sort((a, b) => b[1].length - a[1].length).map(([name, wins]) => {
+            const color = COMPETITOR_COLORS[name] || "#aaa";
+            return (
+              <div key={name} style={{ padding: "8px 16px", borderRadius: "20px", background: `${color}22`, border: `1px solid ${color}55` }}>
+                <span style={{ color, fontWeight: 700, fontSize: "13px" }}>{name}</span>
+                <span style={{ marginLeft: "8px", color: "rgba(255,255,255,0.45)", fontSize: "12px" }}>{wins.length} win{wins.length !== 1 ? "s" : ""}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {competitorWins.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)" }}>
+          <div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div>
+          <div style={{ fontSize: "14px" }}>No competitor wins in current data — refresh to check the latest awarded contracts.</div>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 380px" : "1fr", gap: "20px", alignItems: "start" }}>
+          <div>
+            {competitorWins.map((t, i) => (
+              <div key={t.id} className="fade-up" style={{ animationDelay: `${i * 0.03}s` }}>
+                <CompetitorRow
+                  tender={t}
+                  selected={selected?.id === t.id}
+                  onClick={() => setSelected(selected?.id === t.id ? null : t)}
+                />
+              </div>
+            ))}
+          </div>
+          {selected && <ContactPanel tender={selected} onClose={() => setSelected(null)} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function NordicTenderFinder() {
@@ -633,6 +827,7 @@ export default function NordicTenderFinder() {
   const [totalFromApi, setTotalFromApi]     = useState(0);
   const [downloading, setDownloading]       = useState(false);
   const [downloadError, setDownloadError]   = useState(null);
+  const [activeTab, setActiveTab]           = useState("tenders"); // "tenders" | "competitors"
 
   // ── Fetch from live API ───────────────────────────────────────────────────
   const loadTenders = useCallback(async () => {
@@ -770,6 +965,29 @@ export default function NordicTenderFinder() {
 
         {error && <ErrorBanner message={error} onRetry={loadTenders} />}
 
+        {/* ── Tab navigation ── */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: "16px" }}>
+          {[
+            { id: "tenders",     label: "Tenders",             count: tenders.length },
+            { id: "competitors", label: "Competitor Activity",  count: tenders.filter(t => t.competitor_win).length },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: "8px 18px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 600, border: "none",
+                background: activeTab === tab.id ? "rgba(0,229,160,0.12)" : "rgba(255,255,255,0.04)",
+                outline: activeTab === tab.id ? "1px solid rgba(0,229,160,0.3)" : "1px solid rgba(255,255,255,0.08)",
+                color: activeTab === tab.id ? "#00e5a0" : "rgba(255,255,255,0.45)",
+                transition: "all 0.2s",
+              }}>
+              {tab.label} <span style={{ opacity: 0.65, fontWeight: 400 }}>({tab.count})</span>
+            </button>
+          ))}
+        </div>
+
+        {activeTab === "competitors" && <CompetitorTab tenders={tenders} />}
+
+        {activeTab === "tenders" && <>
+
         {/* ── Stats row ── */}
         <div className="fade-up" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px", marginBottom: "28px" }}>
           {[
@@ -894,6 +1112,8 @@ export default function NordicTenderFinder() {
           </div>
           {selected && <DetailPanel tender={selected} onClose={() => setSelected(null)} />}
         </div>
+
+        </> /* end activeTab === "tenders" */ }
 
         {/* ── Footer ── */}
         <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>

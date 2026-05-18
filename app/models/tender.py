@@ -102,6 +102,19 @@ class Tender(BaseModel):
     # Manually injected via POST /tenders/fetch/{id} — preserved across full refreshes
     manually_added: bool = Field(default=False, description="True if added via direct fetch; survives scheduled refreshes")
 
+    # Awarded supplier — extracted from awards[0].suppliers[0].name in OCDS release
+    awarded_supplier: Optional[str] = None
+
+    # Competitor tracking — set by competitor_tagger service during scoring
+    competitor_win:  bool          = Field(default=False, description="True if an Awarded Contract was won by a known competitor")
+    competitor_name: Optional[str] = Field(default=None,  description="Display name of matched competitor")
+
+    # Contact point — extracted from tender.contactPoint in OCDS release
+    contact_name:  Optional[str] = Field(default=None, description="Contact name from notice")
+    contact_email: Optional[str] = Field(default=None, description="Contact email from notice")
+    contact_phone: Optional[str] = Field(default=None, description="Contact phone from notice")
+    contact_url:   Optional[str] = Field(default=None, description="Contact URL from notice")
+
     model_config = ConfigDict(use_enum_values=True)
 
 

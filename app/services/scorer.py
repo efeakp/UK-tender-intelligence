@@ -15,6 +15,7 @@ from typing import List, Tuple
 from app.models.tender import Tender, ScopeTag, ScoreLabel
 from app.services.framework_tagger import tag_tender
 from app.services.watchlist import apply_watchlist
+from app.services.competitor_tagger import apply_competitor_flag
 
 
 # ── Service scope constants ───────────────────────────────────────────────────
@@ -710,6 +711,9 @@ def score_tender(tender: Tender) -> Tender:
 
     # Watchlist — boost score and flag if authority is on the watchlist
     apply_watchlist(tender)
+
+    # Competitor tracking — flag if awarded supplier is a known competitor
+    apply_competitor_flag(tender)
 
     return tender
 

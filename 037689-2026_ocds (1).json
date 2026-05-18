@@ -1,0 +1,226 @@
+{
+    "uri": "https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages/037689-2026",
+    "version": "1.1",
+    "extensions": [
+        "https://standard.open-contracting.org/profiles/eu/latest/en/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_amendment_rationale_classifications_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_budget_breakdown_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_contract_completion_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_documentation_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_pagination_extension/master/extension.json",
+        "https://raw.githubusercontent.com/open-contracting-extensions/ocds_suitability_extension/master/extension.json",
+        "https://raw.githubusercontent.com/portaledcahn/ocds_Links_extension/main/extension.json",
+        "https://raw.githubusercontent.com/cabinetoffice/ocds_uk_extension/main/extension.json"
+    ],
+    "publishedDate": "2026-04-24T15:28:33+01:00",
+    "publisher": {
+        "name": "Cabinet Office",
+        "scheme": "GB-GOR",
+        "uid": "D2",
+        "uri": "https://www.gov.uk/government/organisations/cabinet-office"
+    },
+    "license": "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "publicationPolicy": "https://www.gov.uk/government/publications/open-contracting",
+    "releases": [
+        {
+            "ocid": "ocds-h6vhtk-068ae4",
+            "id": "037689-2026",
+            "tag": [
+                "planning"
+            ],
+            "date": "2026-04-24T15:28:33+01:00",
+            "initiationType": "tender",
+            "planning": {
+                "documents": [
+                    {
+                        "id": "037689-2026",
+                        "documentType": "plannedProcurementNotice",
+                        "noticeType": "UK1",
+                        "description": "Pipeline notice on Find a Tender",
+                        "url": "https://www.find-tender.service.gov.uk/Notice/037689-2026",
+                        "datePublished": "2026-04-24T15:28:33+01:00",
+                        "format": "text/html"
+                    }
+                ]
+            },
+            "parties": [
+                {
+                    "name": "Northumberland County Council",
+                    "id": "GB-PPON-PJJX-1133-JRGV",
+                    "identifier": {
+                        "scheme": "GB-PPON",
+                        "id": "PJJX-1133-JRGV"
+                    },
+                    "address": {
+                        "streetAddress": "County Hall",
+                        "locality": "Morpeth",
+                        "postalCode": "NE61 2EF",
+                        "country": "GB",
+                        "countryName": "United Kingdom",
+                        "region": "UKC21"
+                    },
+                    "contactPoint": {
+                        "name": "Jacqui Arkle",
+                        "email": "Jacqui.Arkle@northumberland.gov.uk",
+                        "telephone": "+447899065185"
+                    },
+                    "roles": [
+                        "buyer"
+                    ],
+                    "details": {
+                        "url": "http://www.northumberland.gov.uk",
+                        "classifications": [
+                            {
+                                "scheme": "UK_CA_TYPE",
+                                "id": "publicAuthoritySubCentralGovernment",
+                                "description": "Public authority - sub-central government"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "WOMBLE BOND DICKINSON (UK) LLP",
+                    "id": "GB-COH-OC317661",
+                    "identifier": {
+                        "scheme": "GB-COH",
+                        "id": "OC317661"
+                    },
+                    "additionalIdentifiers": [
+                        {
+                            "scheme": "GB-PPON",
+                            "id": "PYBM-6288-WNYY"
+                        }
+                    ],
+                    "address": {
+                        "streetAddress": "4 More London Riverside",
+                        "locality": "London",
+                        "postalCode": "SE1 1AU",
+                        "country": "GB",
+                        "countryName": "United Kingdom",
+                        "region": "UKI44"
+                    },
+                    "contactPoint": {
+                        "email": "helen.mills@wbd-uk.com"
+                    },
+                    "roles": [
+                        "procuringEntity"
+                    ],
+                    "roleDetails": "providing relevant legal advice  on project",
+                    "details": {
+                        "url": "http://www.womblebonddickinson.com"
+                    }
+                }
+            ],
+            "buyer": {
+                "id": "GB-PPON-PJJX-1133-JRGV",
+                "name": "Northumberland County Council"
+            },
+            "tender": {
+                "id": "OPEN2026844",
+                "legalBasis": {
+                    "id": "2023/54",
+                    "scheme": "UKPGA",
+                    "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+                },
+                "title": "Northumberland County Council Heat Networks",
+                "description": "Northumberland County Council plans to run a procurement to appoint a development partner to develop and deliver a heat network in the town of Blyth and to offer the opportunity to develop further heat networks in towns across Northumberland.  The estimated capital value of the Blyth scheme modelled at full build out would be c. £30m, and the estimated capital value of all 8 schemes modelled is expected to exceed c. £200m.",
+                "items": [
+                    {
+                        "id": "1",
+                        "additionalClassifications": [
+                            {
+                                "scheme": "CPV",
+                                "id": "09000000",
+                                "description": "Petroleum products, fuel, electricity and other sources of energy"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "31000000",
+                                "description": "Electrical machinery, apparatus, equipment and consumables; lighting"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "39715000",
+                                "description": "Water heaters and heating for buildings; plumbing equipment"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "42000000",
+                                "description": "Industrial machinery"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "45000000",
+                                "description": "Construction work"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "50700000",
+                                "description": "Repair and maintenance services of building installations"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "65000000",
+                                "description": "Public utilities"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "71300000",
+                                "description": "Engineering services"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "71500000",
+                                "description": "Construction-related services"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "79400000",
+                                "description": "Business and management consultancy and related services"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "79900000",
+                                "description": "Miscellaneous business and business-related services"
+                            },
+                            {
+                                "scheme": "CPV",
+                                "id": "90700000",
+                                "description": "Environmental services"
+                            }
+                        ],
+                        "deliveryAddresses": [
+                            {
+                                "region": "UKC2",
+                                "country": "GB",
+                                "countryName": "United Kingdom"
+                            }
+                        ],
+                        "relatedLot": "1"
+                    }
+                ],
+                "value": {
+                    "amountGross": 36000000.00,
+                    "amount": 30000000.00,
+                    "currency": "GBP"
+                },
+                "mainProcurementCategory": "works",
+                "lots": [
+                    {
+                        "id": "1",
+                        "contractPeriod": {
+                            "startDate": "2027-03-31T00:00:00+01:00",
+                            "endDate": "2028-03-31T23:59:59+01:00"
+                        },
+                        "status": "planned"
+                    }
+                ],
+                "communication": {
+                    "futureNoticeDate": "2026-06-29T23:59:59+01:00"
+                },
+                "status": "planned"
+            },
+            "language": "en"
+        }
+    ]
+}

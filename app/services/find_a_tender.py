@@ -571,6 +571,21 @@ def _parse_fat_release(release: dict, stage_hint: str = "") -> Optional[Tender]:
         notice_url_id = planning_docs[-1].get("id", notice_id) if planning_docs else notice_id
         url = f"https://www.find-tender.service.gov.uk/Notice/{notice_url_id}"
 
+        # Contact point
+        contact_block = tender_block.get("contactPoint", {})
+        contact_name  = contact_block.get("name")      or None
+        contact_email = contact_block.get("email")     or None
+        contact_phone = contact_block.get("telephone") or None
+        contact_url   = contact_block.get("url")       or None
+
+        # Awarded supplier
+        awarded_supplier = None
+        _awards = release.get("awards", [])
+        if _awards:
+            _suppliers = _awards[0].get("suppliers", [])
+            if _suppliers:
+                awarded_supplier = _suppliers[0].get("name") or None
+
         # Use notice_id (release.id e.g. "037689-2026") as the tender ID
         # so related notices sharing an OCID each get a unique identifier.
         # Falls back to OCID if notice_id is not available.
@@ -594,6 +609,11 @@ def _parse_fat_release(release: dict, stage_hint: str = "") -> Optional[Tender]:
             nuts_codes=nuts_codes,
             future_notice_date=future_notice_date,
             lot_count=lot_count,
+            awarded_supplier=awarded_supplier,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            contact_url=contact_url,
         )
         return tender_obj
 

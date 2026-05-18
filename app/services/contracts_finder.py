@@ -408,6 +408,21 @@ def _parse_ocds_release(release: dict) -> Optional[Tender]:
             # Final fallback if no release.id
             url = f"https://www.contractsfinder.service.gov.uk/Notice/{ocid}"
 
+        # Contact point
+        contact_block = tender_block.get("contactPoint", {})
+        contact_name  = contact_block.get("name")      or None
+        contact_email = contact_block.get("email")     or None
+        contact_phone = contact_block.get("telephone") or None
+        contact_url   = contact_block.get("url")       or None
+
+        # Awarded supplier
+        awarded_supplier = None
+        _awards = release.get("awards", [])
+        if _awards:
+            _suppliers = _awards[0].get("suppliers", [])
+            if _suppliers:
+                awarded_supplier = _suppliers[0].get("name") or None
+
         return Tender(
             id=f"CF-{ocid}",
             source=TenderSource.CONTRACTS_FINDER,
@@ -425,6 +440,11 @@ def _parse_ocds_release(release: dict) -> Optional[Tender]:
             ocid=ocid or "",
             nuts_codes=nuts_codes,
             lot_count=lot_count,
+            awarded_supplier=awarded_supplier,
+            contact_name=contact_name,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            contact_url=contact_url,
         )
 
     except Exception as e:

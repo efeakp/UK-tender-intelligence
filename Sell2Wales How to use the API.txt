@@ -1,0 +1,60 @@
+Sell2Wales: How to use the API
+You can query the API to get a list of notices by calling this page:
+https://api.sell2wales.gov.wales/v1/Notices
+
+
+Optionally you can also specify parameters in the request:
+•	dateFrom
+The month and year for the range (in the format 'mm-yyyy'), that the notice was published. Default is the current month.
+•	noticeType
+The notice type. See notice type below. Default is notice type 2 (contract notice).
+•	outputType
+The output type of the notices returned. Use 0 for OCDS output or 1 for TED/custom output. Default is 0.
+•	locale
+en = 2057, cy = 1106
+Note:
+•	If no values are given, default values will be used.
+Example queries
+Example 1: Fetch list of Contract Notices for the month of April, 2019 and return in OCDS format.
+https://api.sell2wales.gov.wales/v1/Notices?dateFrom=04-2019&noticeType=2&outputType=0&locale=2057
+Example 2: Fetch list of Contract Award Notices for the current month. Return in TED/custom format.
+https://api.sell2wales.gov.wales/v1/Notices?noticeType=3&outputType=1
+
+You can query the API to get a family of notices by calling this page:
+https://api.sell2wales.gov.wales/v1/Notice
+
+
+The request requires one parameter:
+•	id - The OCID of the notice you want to retrieve.
+•	locale - en = 2057, cy = 1106
+Example queries
+Example 1: Fetch notice family for a notice with an OCID of 'ocds-kuma6s-0000517932'
+https://api.sell2wales.gov.wales/v1/Notice?id=ocds-kuma6s-0000517932&locale=2057
+
+Below is a list of valid notice types which may be used when querying a notice list.
+noticeType	Title
+1	OJEU - F1 - Prior Information Notice
+2	OJEU - F2 - Contract Notice
+3	OJEU - F3 - Contract Award Notice
+4	OJEU - F4 - Prior Information Notice (Utilities)
+5	OJEU - F5 - Contract Notice (Utilities)
+6	OJEU - F6 - Contract Award Notice (Utilities)
+7	OJEU - F7 - Qualification Systems (Utilities)
+12	OJEU - F12 - Public design contest
+13	OJEU - F13 - Results of Design Contest
+14	OJEU - F14 - Corrigendum
+15	OJEU - F15 - Voluntary Ex Ante Transparency Notice
+20	OJEU - F20 - Modification Notice
+21	OJEU - F21 - Social And other Specific Services (Public Contracts)
+22	OJEU - F22 - Social and other specific services (Utilities)
+23	OJEU - F23 - Social and other specific services (Concessions)
+24	OJEU - F24 - Concession Notice
+25	OJEU - F25 - Concession Award Notice
+51	Site Notice - Website Invitation to Tender Notice
+52	Site Notice - Website Prior Information Notice
+53	Site Notice - Website Contract Award Notice
+54	Site Notice - Sub Contract Pre Award
+55	Site Notice - Sub Contract Post Award
+56	Site Notice - Sub Contract Award
+
+

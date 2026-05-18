@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:etendersni.gov.uk)",
+      "WebFetch(domain:www.etendersni.gov.uk)"
+    ]
+  }
+}
