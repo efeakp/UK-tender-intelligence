@@ -104,7 +104,7 @@ async def summarise_tender(tender_id: str):
         f"Deadline: {tender.deadline.strftime('%d %B %Y') if tender.deadline else 'Unknown'}\n"
         f"CPV Codes: {', '.join(tender.cpv_codes) if tender.cpv_codes else 'Not specified'}\n"
         f"Relevance Score: {tender.score}/10\n\n"
-        f"DESCRIPTION:\n{tender.description or 'No description available.'}\n\n"
+        f"DESCRIPTION:\n{(tender.description or 'No description available.')[:1500]}\n\n"
         "Respond ONLY with a raw JSON object. No explanation, no markdown, no code blocks. "
         "Start your response with { and end with }:\n"
         "{\n"
@@ -124,7 +124,10 @@ async def summarise_tender(tender_id: str):
 
     try:
         ollama_url = f"{settings.ollama_base_url}/api/chat"
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        # Separate connect vs read timeouts: connect should be fast (Ollama is local);
+        # read can be long — gemma3:4b on CPU takes 60–150s for a full prompt.
+        ollama_timeout = httpx.Timeout(connect=5.0, read=180.0, write=10.0, pool=5.0)
+        async with httpx.AsyncClient(timeout=ollama_timeout) as client:
             resp = await client.post(
                 ollama_url,
                 headers={"Content-Type": "application/json"},
@@ -168,14 +171,19 @@ async def summarise_tender(tender_id: str):
             confidence       = result.get("confidence", "Medium"),
         )
 
-    except httpx.HTTPStatusError as e:
-        logger.error("Ollama API error: %s", e)
-        raise HTTPException(status_code=502, detail=f"Ollama error: {e.response.status_code}. Is Ollama running? Run: ollama serve")
     except httpx.ConnectError:
         raise HTTPException(
             status_code=503,
-            detail=f"Cannot connect to Ollama at {settings.ollama_base_url}. Make sure it is running: ollama serve",
+            detail=f"Cannot connect to Ollama at {settings.ollama_base_url}. Start it with: ollama serve",
         )
+    except httpx.ReadTimeout:
+        raise HTTPException(
+            status_code=504,
+            detail=f"Ollama timed out generating a response. The model ({settings.ollama_model}) may be slow on CPU — try again or switch to a smaller model.",
+        )
+    except httpx.HTTPStatusError as e:
+        logger.error("Ollama API error: %s", e)
+        raise HTTPException(status_code=502, detail=f"Ollama returned {e.response.status_code}. Is the model pulled? Run: ollama pull {settings.ollama_model}")
     except Exception as e:
         logger.error("Summarisation failed for %s: %s", tender_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=f"Summarisation failed: {type(e).__name__}: {e}")

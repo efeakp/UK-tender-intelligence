@@ -395,7 +395,10 @@ function DetailPanel({ tender, onClose }) {
     setAiError(null);
     try {
       const res = await fetch(`${API_BASE}/tenders/${encodeURIComponent(tender.id)}/summarise`, { method: "POST" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
       const data = await res.json();
       setAiSummary(data);
     } catch (err) {
