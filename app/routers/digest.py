@@ -32,10 +32,11 @@ router = APIRouter(prefix="/digest", tags=["Digest"])
 
 
 # ── Score thresholds ──────────────────────────────────────────────────────────
-STRONG_THRESHOLD  = 7   # Score ≥ 7 → Strong match (always included)
-LIKELY_THRESHOLD  = 6   # Score ≥ 6 → Likely relevant (included to fill digest)
-DEADLINE_DAYS     = 14  # Tenders with deadline within 14 days flagged urgently
-MAX_TENDERS       = 10  # Maximum tenders in digest
+STRONG_THRESHOLD      = 7   # Score ≥ 7 → Strong match (always included)
+LIKELY_THRESHOLD      = 6   # Score ≥ 6 → Likely relevant (included to fill digest)
+WATCHLIST_MIN_SCORE   = 5   # Watchlist matches must still reach this floor to appear
+DEADLINE_DAYS         = 14  # Tenders with deadline within 14 days flagged urgently
+MAX_TENDERS           = 10  # Maximum tenders in digest
 
 
 def _days_until(deadline: Optional[datetime]) -> Optional[int]:
@@ -81,32 +82,36 @@ def _select_tenders(tenders: List[Tender]) -> List[Tender]:
         and (_days_until(t.deadline) is None or _days_until(t.deadline) >= 0)
     ]
 
-    # Watchlist matches — always include regardless of score
+    # Watchlist matches — from watched authorities, but must still score ≥ WATCHLIST_MIN_SCORE.
+    # The +3 watchlist boost in scorer.py means a base-score-0 clinical/admin tender
+    # only reaches 3 — below the floor, correctly excluded.
     watchlist = [
         t for t in actionable
         if getattr(t, 'watchlist_match', False)
-        and t not in []
+        and t.score >= WATCHLIST_MIN_SCORE
     ]
     watchlist.sort(key=lambda t: t.score, reverse=True)
 
-    # Strong matches (score ≥ 7)
+    # Strong matches (score ≥ 7), not already in watchlist list
     strong = [t for t in actionable if t.score >= STRONG_THRESHOLD and t not in watchlist]
     strong.sort(key=lambda t: t.score, reverse=True)
 
-    # Urgent tenders (deadline within 14 days) — include even if score < 7
+    # Urgent tenders (deadline within 14 days, score ≥ 6)
     urgent = [
         t for t in actionable
         if t.score >= LIKELY_THRESHOLD
         and t.deadline
         and 0 <= _days_until(t.deadline) <= DEADLINE_DAYS
+        and t not in watchlist
         and t not in strong
     ]
     urgent.sort(key=lambda t: t.deadline)
 
-    # Fill remaining slots with likely relevant (score ≥ 4)
+    # Fill remaining slots with likely relevant (score ≥ 6)
     likely = [
         t for t in actionable
         if t.score >= LIKELY_THRESHOLD
+        and t not in watchlist
         and t not in strong
         and t not in urgent
     ]
