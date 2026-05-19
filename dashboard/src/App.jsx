@@ -414,7 +414,8 @@ function DetailPanel({ tender, onClose }) {
     setRecordLoading(true);
     setRecordError(null);
     try {
-      const res = await fetch(`${API_BASE}/tenders/${encodeURIComponent(tender.id)}/record`);
+      const ocidParam = tender.ocid ? `?ocid=${encodeURIComponent(tender.ocid)}` : "";
+      const res = await fetch(`${API_BASE}/tenders/${encodeURIComponent(tender.id)}/record${ocidParam}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setRecord(data);
@@ -808,6 +809,242 @@ function CompetitorTab({ tenders }) {
   );
 }
 
+// ─── Market Intelligence ──────────────────────────────────────────────────────
+
+function MarketAwardRow({ tender, onClick, selected }) {
+  const competitorColor = tender.competitor_win ? (COMPETITOR_COLORS[tender.competitor_name] || "#aaa") : null;
+  return (
+    <div
+      onClick={onClick}
+      style={{ cursor: "pointer", padding: "14px 20px", borderRadius: "10px", background: selected ? "rgba(100,160,255,0.06)" : "rgba(255,255,255,0.03)", border: `1px solid ${selected ? "rgba(100,160,255,0.3)" : "rgba(255,255,255,0.07)"}`, transition: "all 0.2s", marginBottom: "6px" }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.background = "rgba(255,255,255,0.055)"; }}
+      onMouseLeave={e => { if (!selected) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", gap: "5px", marginBottom: "5px", flexWrap: "wrap", alignItems: "center" }}>
+            <SourceBadge source={tender.source} />
+            {tender.competitor_win && (
+              <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "20px", background: `${competitorColor}22`, border: `1px solid ${competitorColor}55`, color: competitorColor, fontWeight: 700, letterSpacing: "0.04em" }}>
+                {tender.competitor_name}
+              </span>
+            )}
+            {(tender.scopes ?? []).slice(0, 2).map(s => <ScopeTag key={s} scope={s} />)}
+          </div>
+          <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "13px", color: "#f0ede8", lineHeight: "1.35", marginBottom: "4px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {tender.title}
+          </div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>{tender.authority}</div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.65)", fontWeight: 600 }}>{tender.value}</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", marginTop: "3px" }}>{formatDate(tender.published)}</div>
+        </div>
+      </div>
+      {tender.awarded_supplier && (
+        <div style={{ marginTop: "6px", fontSize: "11px", color: "rgba(255,255,255,0.4)" }}>
+          <span style={{ color: "rgba(255,255,255,0.22)" }}>Winner: </span>
+          <span style={{ color: tender.competitor_win ? competitorColor : "rgba(255,255,255,0.55)" }}>
+            {tender.awarded_supplier}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MarketTab() {
+  const [status, setStatus]         = useState(null);
+  const [awards, setAwards]         = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError]           = useState(null);
+  const [selected, setSelected]     = useState(null);
+  const [sourceFilter, setSourceFilter] = useState("All");
+  const [scopeFilter, setScopeFilter]   = useState("All");
+  const [competitorOnly, setCompetitorOnly] = useState(false);
+
+  const loadAwards = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/market/awards?page_size=1000&sort_by=published&sort_dir=desc`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setAwards((data.tenders ?? []).map(normaliseTender));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const checkStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/market/status`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setStatus(data);
+      if (data.populated) await loadAwards();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerRefresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/market/refresh`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setStatus({ populated: true, award_count: data.awards_found });
+      await loadAwards();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { checkStatus(); }, []);
+
+  const byCompetitor = awards
+    .filter(t => t.competitor_win)
+    .reduce((acc, t) => { const n = t.competitor_name || "Unknown"; acc[n] = (acc[n] || 0) + 1; return acc; }, {});
+
+  const filtered = awards.filter(t => {
+    if (sourceFilter !== "All" && t.source !== sourceFilter) return false;
+    if (scopeFilter  !== "All" && !(t.scopes ?? []).includes(scopeFilter)) return false;
+    if (competitorOnly && !t.competitor_win) return false;
+    return true;
+  });
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.35)" }}>
+        <div style={{ width: "32px", height: "32px", border: "2px solid rgba(100,160,255,0.2)", borderTop: "2px solid #64a0ff", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+        <div style={{ fontSize: "13px" }}>Checking market data…</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-up">
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+        <div>
+          <div style={{ fontSize: "14px", color: "#f0ede8", fontWeight: 600, marginBottom: "3px" }}>CPV-Matched Awarded Contracts</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
+            FaT 30d · Contracts Finder 6 months · Sell2Wales + PCS 12 months — filtered to Nordic Energy CPV codes
+          </div>
+        </div>
+        <button onClick={triggerRefresh} disabled={refreshing}
+          style={{ padding: "8px 16px", borderRadius: "7px", background: refreshing ? "rgba(255,255,255,0.04)" : "rgba(100,160,255,0.12)", border: `1px solid ${refreshing ? "rgba(255,255,255,0.1)" : "rgba(100,160,255,0.3)"}`, color: refreshing ? "rgba(255,255,255,0.3)" : "#64a0ff", fontSize: "12px", fontWeight: 600, cursor: refreshing ? "not-allowed" : "pointer", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
+          {refreshing ? "⏳ Fetching (2–5 min)…" : status?.populated ? "↻ Refresh" : "Load Market Data"}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ marginBottom: "16px", padding: "12px 14px", borderRadius: "8px", background: "rgba(198,40,40,0.1)", border: "1px solid rgba(198,40,40,0.3)", fontSize: "12px", color: "#ef9a9a" }}>⚠ {error}</div>
+      )}
+
+      {refreshing && (
+        <div style={{ padding: "24px", borderRadius: "10px", background: "rgba(100,160,255,0.05)", border: "1px solid rgba(100,160,255,0.15)", textAlign: "center", marginBottom: "20px" }}>
+          <div style={{ width: "28px", height: "28px", border: "2px solid rgba(100,160,255,0.2)", borderTop: "2px solid #64a0ff", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+          <div style={{ fontSize: "13px", color: "#64a0ff", fontWeight: 600, marginBottom: "6px" }}>Fetching market data…</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
+            Querying all sources for CPV-matched awarded contracts.<br />
+            This typically takes 2–5 minutes.
+          </div>
+        </div>
+      )}
+
+      {!status?.populated && !refreshing && (
+        <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>📊</div>
+          <div style={{ fontSize: "14px", marginBottom: "8px", color: "rgba(255,255,255,0.45)" }}>No market data loaded yet.</div>
+          <div style={{ fontSize: "12px" }}>Click "Load Market Data" to fetch CPV-relevant awarded contracts from the past year.</div>
+        </div>
+      )}
+
+      {status?.populated && !refreshing && awards.length > 0 && (<>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "20px" }}>
+          {[
+            { label: "Total Awards",   value: awards.length,                                               color: "#64a0ff" },
+            { label: "Competitor Wins",value: awards.filter(t => t.competitor_win).length,                 color: "#ff6b6b" },
+            { label: "With Contact",   value: awards.filter(t => t.contact_email || t.contact_name).length,color: "#00e5a0" },
+            { label: "Total Value",    value: "£" + (awards.reduce((s, t) => s + (t.value_amount || 0), 0) / 1e6).toFixed(1) + "m", color: "#f5c842", isText: true },
+          ].map(({ label, value, color, isText }) => (
+            <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 16px" }}>
+              <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>{label}</div>
+              <div style={{ fontSize: isText ? "18px" : "24px", fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Competitor wins chips */}
+        {Object.keys(byCompetitor).length > 0 && (
+          <div style={{ display: "flex", gap: "8px", marginBottom: "18px", flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", marginRight: "2px" }}>Competitor wins:</span>
+            {Object.entries(byCompetitor).sort((a, b) => b[1] - a[1]).map(([name, count]) => {
+              const color = COMPETITOR_COLORS[name] || "#aaa";
+              return (
+                <span key={name} style={{ padding: "4px 10px", borderRadius: "20px", background: `${color}22`, border: `1px solid ${color}55`, color, fontSize: "11px", fontWeight: 600 }}>
+                  {name} <span style={{ opacity: 0.6, fontWeight: 400 }}>{count}</span>
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Filters */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+          {[
+            { label: "Source", value: sourceFilter, set: setSourceFilter, options: ["All", "Find a Tender", "Contracts Finder", "Sell2Wales", "Public Contracts Scotland"] },
+            { label: "Scope",  value: scopeFilter,  set: setScopeFilter,  options: ["All", "Service 01: Renewable Energy Opportunity Identification", "Service 02: Energy Feasibility Studies", "Service 03: Energy System Optimisation", "Service 04: Business Case Development"] },
+          ].map(({ label, value, set, options }) => (
+            <select key={label} value={value} onChange={e => set(e.target.value)}
+              style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", cursor: "pointer" }}>
+              {options.map(o => (
+                <option key={o} value={o} style={{ background: "#1a2030" }}>{o === "All" ? `All ${label}s` : o.split(":")[0]}</option>
+              ))}
+            </select>
+          ))}
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "rgba(255,255,255,0.55)", cursor: "pointer" }}>
+            <input type="checkbox" checked={competitorOnly} onChange={e => setCompetitorOnly(e.target.checked)} style={{ accentColor: "#ff6b6b" }} />
+            Competitor wins only
+          </label>
+          <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{filtered.length} of {awards.length} awards</span>
+        </div>
+
+        {/* Awards list + detail panel */}
+        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 380px" : "1fr", gap: "20px", alignItems: "start" }}>
+          <div>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>No awards match current filters.</div>
+            ) : filtered.map((t, i) => (
+              <div key={t.id} className="fade-up" style={{ animationDelay: `${Math.min(i, 20) * 0.02}s` }}>
+                <MarketAwardRow
+                  tender={t}
+                  selected={selected?.id === t.id}
+                  onClick={() => setSelected(selected?.id === t.id ? null : t)}
+                />
+              </div>
+            ))}
+          </div>
+          {selected && <DetailPanel tender={selected} onClose={() => setSelected(null)} />}
+        </div>
+      </>)}
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function NordicTenderFinder() {
@@ -822,6 +1059,7 @@ export default function NordicTenderFinder() {
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
   const [minScore, setMinScore]             = useState(5);
   const [regionFilter, setRegionFilter]     = useState("");
+  const [cpvFilter, setCpvFilter]           = useState("");
   const [lastRefresh, setLastRefresh]       = useState(null);
   const [refreshing, setRefreshing]         = useState(false);
   const [apiHealthy, setApiHealthy]         = useState(true);
@@ -902,9 +1140,13 @@ export default function NordicTenderFinder() {
       const prefix = regionFilter.trim().toUpperCase();
       result = result.filter(t => (t.nuts_codes ?? []).some(r => r.startsWith(prefix)));
     }
+    if (cpvFilter.trim()) {
+      const prefix = cpvFilter.replace(/-/g, "").trim();
+      result = result.filter(t => (t.cpv_codes ?? []).some(c => c.replace(/-/g, "").startsWith(prefix)));
+    }
     result = result.filter(t => t.score >= minScore);
     setFiltered(result);
-  }, [tenders, search, sourceFilter, scopeFilter, categoryFilter, regionFilter, minScore]);
+  }, [tenders, search, sourceFilter, scopeFilter, categoryFilter, regionFilter, cpvFilter, minScore]);
 
   const strongMatches  = tenders.filter(t => t.score >= 7).length;
   const likelyRelevant = tenders.filter(t => t.score >= 4 && t.score < 7).length;
@@ -969,8 +1211,9 @@ export default function NordicTenderFinder() {
         {/* ── Tab navigation ── */}
         <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: "16px" }}>
           {[
-            { id: "tenders",     label: "Tenders",             count: tenders.length },
-            { id: "competitors", label: "Competitor Activity",  count: tenders.filter(t => t.competitor_win).length },
+            { id: "tenders",     label: "Tenders",              count: tenders.length },
+            { id: "competitors", label: "Competitor Activity",   count: tenders.filter(t => t.competitor_win).length },
+            { id: "market",      label: "Market Intelligence",   count: null },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               style={{
@@ -980,12 +1223,14 @@ export default function NordicTenderFinder() {
                 color: activeTab === tab.id ? "#00e5a0" : "rgba(255,255,255,0.45)",
                 transition: "all 0.2s",
               }}>
-              {tab.label} <span style={{ opacity: 0.65, fontWeight: 400 }}>({tab.count})</span>
+              {tab.label}{tab.count !== null && <span style={{ opacity: 0.65, fontWeight: 400 }}> ({tab.count})</span>}
             </button>
           ))}
         </div>
 
         {activeTab === "competitors" && <CompetitorTab tenders={tenders} />}
+
+        {activeTab === "market" && <MarketTab />}
 
         {activeTab === "tenders" && <>
 
@@ -1040,6 +1285,13 @@ export default function NordicTenderFinder() {
             placeholder="Region (e.g. UKE)"
             title="Filter by NUTS delivery region prefix. UKE = Yorkshire, UKD = North West, UKH = East of England, UKI = London, UKJ = South East"
             style={{ width: "130px", padding: "9px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none" }}
+          />
+          <input
+            value={cpvFilter}
+            onChange={e => setCpvFilter(e.target.value)}
+            placeholder="CPV (e.g. 71314)"
+            title="Filter by CPV code prefix. E.g. 71314 matches all energy services codes (71314000, 71314100…)"
+            style={{ width: "140px", padding: "9px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none", fontFamily: "monospace" }}
           />
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>

@@ -23,6 +23,8 @@ CACHE_KEY_CF_META          = "meta:contracts_finder"
 CACHE_KEY_S2W_META         = "s2w_meta"
 CACHE_KEY_PCS_META         = "pcs_meta"
 CACHE_KEY_LAST_REFRESHED   = "meta:last_refreshed"
+CACHE_KEY_MARKET_AWARDS    = "market:awards"    # CPV-matched awarded contracts (extended lookback)
+CACHE_KEY_MARKET_REFRESHED = "market:refreshed" # timestamp of last market data refresh
 
 @dataclass
 class CacheEntry:

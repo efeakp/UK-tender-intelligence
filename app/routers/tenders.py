@@ -36,13 +36,14 @@ async def list_tenders(
     min_score:      int            = Query(default=5,  ge=0, le=10, description="Minimum relevance score"),
     region:         Optional[str]  = Query(None,       description="Filter by NUTS delivery region code (e.g. UKE for Yorkshire, UKD for North West)"),
     competitor_win: Optional[bool] = Query(None,       description="Filter to competitor wins only (true) or exclude them (false)"),
+    cpv:            Optional[str]  = Query(None,       description="Filter by CPV code prefix (e.g. 71314 matches all 71314xxx codes)"),
     page:           int            = Query(default=1,  ge=1),
     page_size:      int            = Query(default=25, ge=1, le=2000, description="Results per page"),
     sort_by:        str            = Query(default="score", description="score | deadline | published | value"),
     sort_dir:       str            = Query(default="desc",  description="asc | desc"),
 ):
     tenders = _get_cached_tenders()
-    tenders = apply_filters(tenders, q=q, source=source, scope=scope, category=category, min_score=min_score, region=region, competitor_win=competitor_win)
+    tenders = apply_filters(tenders, q=q, source=source, scope=scope, category=category, min_score=min_score, region=region, competitor_win=competitor_win, cpv=cpv)
     tenders = apply_sort(tenders, sort_by=sort_by, sort_dir=sort_dir)
 
     total        = len(tenders)
@@ -113,7 +114,10 @@ async def fetch_fat_notice(notice_id: str):
 
 
 @router.get("/{tender_id}/record", response_model=ProcurementRecord, summary="Get full procurement lifecycle for a FaT tender")
-async def get_tender_record(tender_id: str):
+async def get_tender_record(
+    tender_id: str,
+    ocid: Optional[str] = Query(None, description="OCID passed directly from the client — bypasses cache lookup so post-refresh requests still work"),
+):
     """
     Fetch the full procurement lifecycle (all notices in the OCID family) for a Find a Tender notice.
     Only available for tenders with an OCID (FaT source). Returns all related notice entries in
@@ -121,21 +125,24 @@ async def get_tender_record(tender_id: str):
     """
     from app.services.find_a_tender import fetch_record_by_ocid
 
-    tenders = _get_cached_tenders()
-    tender = next((t for t in tenders if t.id == tender_id), None)
-    if not tender:
-        raise HTTPException(status_code=404, detail=f"Tender '{tender_id}' not found")
-    if not tender.ocid:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Tender '{tender_id}' has no OCID — procurement record not available",
-        )
+    if not ocid:
+        # Fall back to cache lookup when ocid not provided
+        tenders = _get_cached_tenders()
+        tender = next((t for t in tenders if t.id == tender_id), None)
+        if not tender:
+            raise HTTPException(status_code=404, detail=f"Tender '{tender_id}' not found in cache — try again or pass ?ocid= directly")
+        if not tender.ocid:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Tender '{tender_id}' has no OCID — procurement record not available",
+            )
+        ocid = tender.ocid
 
-    record_data = await fetch_record_by_ocid(tender.ocid)
+    record_data = await fetch_record_by_ocid(ocid)
     if not record_data:
         raise HTTPException(
             status_code=503,
-            detail=f"Could not fetch procurement record for OCID '{tender.ocid}' from Find a Tender",
+            detail=f"Could not fetch procurement record for OCID '{ocid}' from Find a Tender",
         )
     return ProcurementRecord(**record_data)
 

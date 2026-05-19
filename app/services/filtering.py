@@ -28,6 +28,7 @@ def apply_filters(
     min_score: int = 0,
     region: Optional[str] = None,
     competitor_win: Optional[bool] = None,
+    cpv: Optional[str] = None,
 ) -> List[Tender]:
     if q:
         q_lower = q.lower()
@@ -54,6 +55,12 @@ def apply_filters(
         ]
     if competitor_win is not None:
         tenders = [t for t in tenders if t.competitor_win == competitor_win]
+    if cpv:
+        cpv_prefix = cpv.replace("-", "").strip()
+        tenders = [
+            t for t in tenders
+            if any(c.replace("-", "").strip().startswith(cpv_prefix) for c in (t.cpv_codes or []))
+        ]
     return tenders
 
 
