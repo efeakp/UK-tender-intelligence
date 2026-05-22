@@ -1073,7 +1073,7 @@ export default function NordicTenderFinder() {
     setRefreshing(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/tenders?min_score=0&page_size=2000&sort_by=score&sort_dir=desc`);
+      const res = await fetch(`${API_BASE}/tenders?min_score=0&page_size=10000&sort_by=score&sort_dir=desc`);
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.detail ?? `HTTP ${res.status}`);

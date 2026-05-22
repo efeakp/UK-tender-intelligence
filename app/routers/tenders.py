@@ -38,7 +38,7 @@ async def list_tenders(
     competitor_win: Optional[bool] = Query(None,       description="Filter to competitor wins only (true) or exclude them (false)"),
     cpv:            Optional[str]  = Query(None,       description="Filter by CPV code prefix (e.g. 71314 matches all 71314xxx codes)"),
     page:           int            = Query(default=1,  ge=1),
-    page_size:      int            = Query(default=25, ge=1, le=2000, description="Results per page"),
+    page_size:      int            = Query(default=25, ge=1, le=10000, description="Results per page"),
     sort_by:        str            = Query(default="score", description="score | deadline | published | value"),
     sort_dir:       str            = Query(default="desc",  description="asc | desc"),
 ):
