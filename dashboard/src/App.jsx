@@ -749,6 +749,9 @@ function CategorySidebar({ tenders, activeCategory, onSelect, sourceCounts }) {
             { code: "CF",  key: "Contracts Finder",          color: "#5babff" },
             { code: "S2W", key: "Sell2Wales",                color: "#ff7070" },
             { code: "PCS", key: "Public Contracts Scotland", color: "#00c878" },
+            { code: "PRO", key: "Proactis",                  color: "#ff6b3d" },
+            { code: "YOR", key: "Yortender",                 color: "#a07ef5" },
+            { code: "INT", key: "In-Tend",                   color: "#00c48c" },
           ].map(({ code, key, color }) => (
             <div key={code} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 10px", marginBottom: "2px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -2528,7 +2531,7 @@ export default function NordicTenderFinder() {
                 style={{ flex: "1", minWidth: "180px", padding: "8px 13px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none" }} />
 
               {[
-                { label: "Source", value: sourceFilter, setValue: setSourceFilter, options: ["All", ...Object.keys(sourceCounts).sort()] },
+                { label: "Source", value: sourceFilter, setValue: setSourceFilter, options: ["All", "Find a Tender", "Contracts Finder", "Sell2Wales", "Public Contracts Scotland", "Proactis", "Yortender", "In-Tend"] },
                 { label: "Scope",  value: scopeFilter,  setValue: setScopeFilter,  options: ["All", "Service 01: Renewable Energy Opportunity Identification", "Service 02: Energy Feasibility Studies", "Service 03: Energy System Optimisation", "Service 04: Business Case Development"] },
               ].map(({ label, value, setValue, options }) => (
                 <select key={label} value={value} onChange={e => setValue(e.target.value)}
