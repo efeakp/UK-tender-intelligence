@@ -17,9 +17,9 @@ from app.services.scorer import score_tender
 
 logger = logging.getLogger(__name__)
 
-GtR_BASE = "https://gtr.ukri.org/gtr/api"
+GtR_BASE = "https://gtr.ukri.org/api"
 HEADERS = {
-    "Accept": "application/vnd.rcuk.gtr.json-v7",
+    "Accept": "application/json",
     "User-Agent": "NordicEnergyTenderIntelligence/2.0",
 }
 
@@ -69,14 +69,8 @@ def _format_value(pounds) -> str:
 
 
 def _lead_org(project: dict) -> str:
-    for key in ("leadOrganisations", "leadOrganisation"):
-        val = project.get(key)
-        if isinstance(val, list) and val:
-            o = val[0]
-            return o.get("name", "—") if isinstance(o, dict) else str(o)
-        if isinstance(val, dict):
-            return val.get("name", "—")
-    return "—"
+    # The listing endpoint doesn't include lead org — fall back to funder name
+    return _funder_name(project) or "Innovate UK"
 
 
 def _funder_name(project: dict) -> str:
@@ -93,17 +87,19 @@ def _is_innovate_uk(project: dict) -> bool:
 def _map_to_tender(project: dict) -> Tender:
     fund = project.get("fund") or {}
     pid  = project.get("id", "")
+    # GtR uses grantReference in the public URL, not the internal UUID
+    ref  = project.get("grantReference") or pid
     return Tender(
         id            = f"ukri-{pid}",
         source        = TenderSource.INNOVATE_UK,
         title         = project.get("title") or "Untitled",
         authority     = _lead_org(project),
-        description   = project.get("abstractText") or project.get("potentialImpact") or "",
+        description   = project.get("abstractText") or project.get("potentialImpactText") or "",
         published     = _parse_date(fund.get("start")),
         deadline      = _parse_date(fund.get("end")),
         value         = _format_value(fund.get("valuePounds")),
         value_amount  = fund.get("valuePounds"),
-        url           = f"https://gtr.ukri.org/projects?ref={pid}",
+        url           = f"https://gtr.ukri.org/projects?ref={ref}",
         category      = "Opportunity" if project.get("status") == "Active" else "Awarded Contract",
         cpv_codes     = [],
         nuts_codes    = [],
@@ -116,10 +112,10 @@ async def _fetch_page(client: httpx.AsyncClient, term: str, page: int) -> list[d
     try:
         resp = await client.get(
             f"{GtR_BASE}/projects",
-            params={"p": page, "s": 100, "q": term, "f": "pro.am"},
+            params={"p": page, "s": 100, "q": term},
         )
         resp.raise_for_status()
-        return resp.json().get("project", [])
+        return resp.json().get("projectsBean", {}).get("projects", [])
     except Exception as exc:
         logger.warning("GtR API error (term=%r page=%d): %s", term, page, exc)
         return []
