@@ -703,7 +703,62 @@ function ApiStatusDot({ healthy }) {
   );
 }
 
-// ─── Category stats strip ─────────────────────────────────────────────────────
+// ─── Category sidebar (vertical, right panel) ────────────────────────────────
+
+function CategorySidebar({ tenders, activeCategory, onSelect, sourceCounts }) {
+  const counts = tenders.reduce((acc, t) => {
+    acc[t.category] = (acc[t.category] || 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.25)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: "10px", paddingLeft: "4px" }}>Categories</div>
+      {ALL_CATEGORIES.map(cat => {
+        const isAll  = cat === "All Categories";
+        const count  = isAll ? tenders.length : (counts[cat] ?? 0);
+        const active = activeCategory === cat;
+        const cfg    = CATEGORY_CONFIG[cat] || { color: "#aaa", bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.12)" };
+        return (
+          <button key={cat} onClick={() => onSelect(cat)}
+            style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              width: "100%", padding: "8px 10px", borderRadius: "7px", cursor: "pointer",
+              fontSize: "11px", fontWeight: active ? 600 : 400, border: "none", marginBottom: "3px",
+              background: active ? cfg.bg : "transparent",
+              outline: active ? `1px solid ${cfg.border}` : "1px solid transparent",
+              color: active ? cfg.color : "rgba(255,255,255,0.4)",
+              transition: "all 0.15s", textAlign: "left",
+            }}>
+            <span>{isAll ? "All" : cat}</span>
+            <span style={{ fontSize: "10px", opacity: 0.65, fontVariantNumeric: "tabular-nums" }}>{count}</span>
+          </button>
+        );
+      })}
+
+      {sourceCounts && (
+        <div style={{ marginTop: "20px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.25)", letterSpacing: "0.09em", textTransform: "uppercase", marginBottom: "10px", paddingLeft: "4px" }}>Sources</div>
+          {[
+            { code: "FaT", key: "Find a Tender",             color: "#b48ef5" },
+            { code: "CF",  key: "Contracts Finder",          color: "#5babff" },
+            { code: "S2W", key: "Sell2Wales",                color: "#ff7070" },
+            { code: "PCS", key: "Public Contracts Scotland", color: "#00c878" },
+          ].map(({ code, key, color }) => (
+            <div key={code} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 10px", marginBottom: "2px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ fontSize: "9px", padding: "1px 5px", borderRadius: "3px", background: `${color}22`, border: `1px solid ${color}55`, color, fontWeight: 700 }}>{code}</span>
+              </div>
+              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", fontVariantNumeric: "tabular-nums" }}>{sourceCounts[key] ?? 0}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Category stats strip (kept for backwards compat) ─────────────────────────
 
 function CategoryStrip({ tenders, activeCategory, onSelect }) {
   const counts = tenders.reduce((acc, t) => {
@@ -1682,197 +1737,189 @@ export default function NordicTenderFinder() {
 
   // ── Main render ───────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0f1a", fontFamily: "'DM Sans', sans-serif", color: "#f0ede8" }}>
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", overflow: "hidden", background: "#0a0f1a", fontFamily: "'DM Sans', sans-serif", color: "#f0ede8" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+        html, body, #root { height: 100%; overflow: hidden; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(0,229,160,0.2); border-radius: 2px; }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-        .fade-up { animation: fadeUp 0.4s ease forwards; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .fade-up { animation: fadeUp 0.35s ease forwards; }
+        .nav-btn:hover { background: rgba(255,255,255,0.05) !important; color: rgba(255,255,255,0.7) !important; }
       `}</style>
 
-      {/* ── Header ── */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "20px 32px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(10,15,26,0.95)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <img
-            src="/logo.png"
-            alt="Nordic Energy"
-            style={{ height: "40px", width: "auto", objectFit: "contain" }}
-          />
-          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Tender Intelligence</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center" }}>
-            <ApiStatusDot healthy={apiHealthy} />
-            {apiHealthy ? "API connected" : "API unreachable"}
+      {/* ── Header (two rows, never scrolls) ── */}
+      <div style={{ flexShrink: 0, background: "rgba(10,15,26,0.98)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)", zIndex: 100 }}>
+        {/* Row 1: logo + controls */}
+        <div style={{ padding: "11px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <img src="/logo.png" alt="Nordic Energy" style={{ height: "36px", width: "auto", objectFit: "contain" }} />
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "0.07em", textTransform: "uppercase" }}>Tender Intelligence</div>
           </div>
-          {lastRefresh && (
-            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
-              Last scan: {lastRefresh.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
-            </span>
-          )}
-          <button onClick={triggerRefresh} disabled={refreshing}
-            style={{ padding: "7px 14px", borderRadius: "7px", background: "rgba(0,229,160,0.12)", border: "1px solid rgba(0,229,160,0.25)", color: "#00e5a0", fontSize: "12px", fontWeight: 600, cursor: refreshing ? "not-allowed" : "pointer", letterSpacing: "0.04em", opacity: refreshing ? 0.5 : 1 }}>
-            {refreshing ? "Scanning…" : "↻ Refresh"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center" }}>
+              <ApiStatusDot healthy={apiHealthy} />
+              {apiHealthy ? "API connected" : "API unreachable"}
+            </div>
+            {lastRefresh && (
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.28)" }}>
+                Last scan: {lastRefresh.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            )}
+            <button onClick={triggerRefresh} disabled={refreshing}
+              style={{ padding: "6px 13px", borderRadius: "7px", background: "rgba(0,229,160,0.12)", border: "1px solid rgba(0,229,160,0.25)", color: "#00e5a0", fontSize: "12px", fontWeight: 600, cursor: refreshing ? "not-allowed" : "pointer", letterSpacing: "0.04em", opacity: refreshing ? 0.5 : 1 }}>
+              {refreshing ? "Scanning…" : "↻ Refresh"}
+            </button>
+          </div>
+        </div>
+
+        {/* Row 2: live metrics — always visible */}
+        <div style={{ padding: "6px 20px 10px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", gap: "28px", alignItems: "center", overflowX: "auto" }}>
+          {[
+            { label: "Tenders",     value: tenders.length,                                        color: "#f0ede8" },
+            { label: "Strong",      value: strongMatches,                                          color: "#00e5a0" },
+            { label: "Likely",      value: likelyRelevant,                                         color: "#f5c842" },
+            { label: "Sources",     value: Object.keys(sourceCounts).length,                       color: "#64a0ff" },
+            { label: "NE Eligible", value: tenders.filter(t => t.nordic_eligible).length,          color: "#00e5a0" },
+            { label: "Watchlist",   value: tenders.filter(t => t.watchlist_match).length,          color: "#ffc800" },
+            { label: "Shortlisted", value: shortlistEntries.length,                                color: "#f5c842" },
+          ].map(({ label, value, color }, i) => (
+            <React.Fragment key={label}>
+              {i > 0 && <div style={{ width: "1px", height: "22px", background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />}
+              <div style={{ display: "flex", flexDirection: "column", gap: "1px", flexShrink: 0 }}>
+                <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</div>
+                <div style={{ fontSize: "20px", fontWeight: 700, color, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</div>
+              </div>
+            </React.Fragment>
+          ))}
         </div>
       </div>
 
-      <div style={{ maxWidth: "1300px", margin: "0 auto", padding: "28px 32px" }}>
+      {/* ── Body: left nav | content | right panel ── */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
 
-        {error && <ErrorBanner message={error} onRetry={loadTenders} />}
-
-        {/* ── Tab navigation ── */}
-        <div style={{ display: "flex", gap: "8px", marginBottom: "24px", borderBottom: "1px solid rgba(255,255,255,0.07)", paddingBottom: "16px" }}>
+        {/* LEFT: vertical tab navigation — never scrolls */}
+        <nav style={{ width: "185px", flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "16px 10px", display: "flex", flexDirection: "column", gap: "3px", overflowY: "auto" }}>
           {[
-            { id: "tenders",     label: "Tenders",              count: tenders.length },
-            { id: "competitors", label: "Competitor Activity",   count: tenders.filter(t => t.competitor_win).length },
-            { id: "market",      label: "Market Intelligence",   count: null },
-            { id: "shortlist",   label: "Shortlist",             count: shortlistEntries.length },
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              style={{
-                padding: "8px 18px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: 600, border: "none",
-                background: activeTab === tab.id ? "rgba(0,229,160,0.12)" : "rgba(255,255,255,0.04)",
-                outline: activeTab === tab.id ? "1px solid rgba(0,229,160,0.3)" : "1px solid rgba(255,255,255,0.08)",
-                color: activeTab === tab.id ? "#00e5a0" : "rgba(255,255,255,0.45)",
-                transition: "all 0.2s",
-              }}>
-              {tab.label}{tab.count !== null && <span style={{ opacity: 0.65, fontWeight: 400 }}> ({tab.count})</span>}
-            </button>
-          ))}
-        </div>
+            { id: "tenders",     label: "Tenders",             icon: "⚡", count: tenders.length },
+            { id: "competitors", label: "Competitor Activity", icon: "🏢", count: tenders.filter(t => t.competitor_win).length },
+            { id: "market",      label: "Market Intelligence", icon: "📈", count: null },
+            { id: "shortlist",   label: "Shortlist",           icon: "★",  count: shortlistEntries.length },
+          ].map(tab => {
+            const active = activeTab === tab.id;
+            return (
+              <button key={tab.id} className="nav-btn" onClick={() => setActiveTab(tab.id)}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "9px 12px", borderRadius: "8px", cursor: "pointer",
+                  fontSize: "12px", fontWeight: active ? 600 : 400, border: "none", textAlign: "left", width: "100%",
+                  background: active ? "rgba(0,229,160,0.10)" : "transparent",
+                  outline: active ? "1px solid rgba(0,229,160,0.25)" : "1px solid transparent",
+                  color: active ? "#00e5a0" : "rgba(255,255,255,0.42)",
+                  transition: "all 0.15s",
+                }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "14px", lineHeight: 1 }}>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </span>
+                {tab.count !== null && (
+                  <span style={{ fontSize: "10px", padding: "1px 6px", borderRadius: "10px", background: active ? "rgba(0,229,160,0.15)" : "rgba(255,255,255,0.07)", color: active ? "#00e5a0" : "rgba(255,255,255,0.35)", fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
 
-        {activeTab === "competitors" && <CompetitorTab tenders={tenders} />}
+          {/* Spacer + footer links */}
+          <div style={{ flex: 1 }} />
+          <div style={{ padding: "12px 4px 4px", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: "12px" }}>
+            {[
+              { href: "https://www.find-tender.service.gov.uk",         label: "Find a Tender", color: "#b48ef5" },
+              { href: "https://www.contractsfinder.service.gov.uk",     label: "Contracts Finder", color: "#5babff" },
+              { href: "https://www.sell2wales.gov.wales",               label: "Sell2Wales", color: "#ff7070" },
+              { href: "https://www.publiccontractsscotland.gov.uk",     label: "PCS", color: "#00c878" },
+            ].map(({ href, label, color }) => (
+              <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+                style={{ display: "block", fontSize: "10px", color: `${color}99`, textDecoration: "none", padding: "3px 4px", marginBottom: "1px" }}>
+                {label} ↗
+              </a>
+            ))}
+          </div>
+        </nav>
 
-        {activeTab === "market" && <MarketTab />}
+        {/* MIDDLE: scrollable content area */}
+        <main style={{ flex: 1, overflowY: "auto", padding: "20px 22px" }}>
+          {error && <ErrorBanner message={error} onRetry={loadTenders} />}
 
-        {activeTab === "shortlist" && (
-          <ShortlistTab
-            entries={shortlistEntries}
-            liveTenders={tenders}
-            onFeedbackSave={handleFeedbackSave}
-            onRemove={handleShortlistRemove}
-            onExportCsv={handleShortlistExportCsv}
-          />
-        )}
+          {activeTab === "competitors" && <CompetitorTab tenders={tenders} />}
+          {activeTab === "market"      && <MarketTab />}
+          {activeTab === "shortlist"   && (
+            <ShortlistTab
+              entries={shortlistEntries}
+              liveTenders={tenders}
+              onFeedbackSave={handleFeedbackSave}
+              onRemove={handleShortlistRemove}
+              onExportCsv={handleShortlistExportCsv}
+            />
+          )}
 
-        {activeTab === "tenders" && <>
+          {activeTab === "tenders" && <>
+            {/* Filters + Download bar */}
+            <div className="fade-up" style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tenders, authorities…"
+                style={{ flex: "1", minWidth: "180px", padding: "8px 13px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none" }} />
 
-        {/* ── Stats row ── */}
-        <div className="fade-up" style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "12px", marginBottom: "28px" }}>
-          {[
-            { label: "Total Tenders",   value: tenders.length, color: "#f0ede8" },
-            { label: "Strong Matches",  value: strongMatches,  color: "#00e5a0" },
-            { label: "Likely Relevant", value: likelyRelevant, color: "#f5c842" },
-            { label: "Sources Active",  value: Object.keys(sourceCounts).length, color: "#64a0ff" },
-            { label: "NE Eligible",  value: tenders.filter(t => t.nordic_eligible).length, color: "#00e5a0" },
-            { label: "Watchlist",    value: tenders.filter(t => t.watchlist_match).length,  color: "#ffc800" },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px" }}>
-              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "6px" }}>{label}</div>
-              <div style={{ fontSize: "28px", fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Category strip ── */}
-        <div className="fade-up">
-          <CategoryStrip
-            tenders={tenders}
-            activeCategory={categoryFilter}
-            onSelect={setCategoryFilter}
-          />
-        </div>
-
-        {/* ── Filters + Download bar ── */}
-        <div className="fade-up" style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search tenders, authorities…"
-            style={{ flex: "1", minWidth: "200px", padding: "9px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none" }} />
-
-          {[
-            { label: "Source", value: sourceFilter, setValue: setSourceFilter, options: ["All", "Find a Tender", "Contracts Finder", "Sell2Wales", "Public Contracts Scotland"] },
-            { label: "Scope",  value: scopeFilter,  setValue: setScopeFilter,  options: ["All", "Service 01: Renewable Energy Opportunity Identification", "Service 02: Energy Feasibility Studies", "Service 03: Energy System Optimisation", "Service 04: Business Case Development"] },
-          ].map(({ label, value, setValue, options }) => (
-            <select key={label} value={value} onChange={e => setValue(e.target.value)}
-              style={{ padding: "9px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none", cursor: "pointer" }}>
-              {options.map(o => (
-                <option key={o} value={o} style={{ background: "#1a2030" }}>
-                  {o === "All" ? `All ${label}s` : o.split(" / ")[0]}
-                </option>
+              {[
+                { label: "Source", value: sourceFilter, setValue: setSourceFilter, options: ["All", "Find a Tender", "Contracts Finder", "Sell2Wales", "Public Contracts Scotland"] },
+                { label: "Scope",  value: scopeFilter,  setValue: setScopeFilter,  options: ["All", "Service 01: Renewable Energy Opportunity Identification", "Service 02: Energy Feasibility Studies", "Service 03: Energy System Optimisation", "Service 04: Business Case Development"] },
+              ].map(({ label, value, setValue, options }) => (
+                <select key={label} value={value} onChange={e => setValue(e.target.value)}
+                  style={{ padding: "8px 10px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", cursor: "pointer" }}>
+                  {options.map(o => (
+                    <option key={o} value={o} style={{ background: "#1a2030" }}>
+                      {o === "All" ? `All ${label}s` : o.split(" / ")[0]}
+                    </option>
+                  ))}
+                </select>
               ))}
-            </select>
-          ))}
 
-          <input
-            value={regionFilter}
-            onChange={e => setRegionFilter(e.target.value)}
-            placeholder="Region (e.g. UKE)"
-            title="Filter by NUTS delivery region prefix. UKE = Yorkshire, UKD = North West, UKH = East of England, UKI = London, UKJ = South East"
-            style={{ width: "130px", padding: "9px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none" }}
-          />
-          <input
-            value={cpvFilter}
-            onChange={e => setCpvFilter(e.target.value)}
-            placeholder="CPV (e.g. 71314)"
-            title="Filter by CPV code prefix. E.g. 71314 matches all energy services codes (71314000, 71314100…)"
-            style={{ width: "140px", padding: "9px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none", fontFamily: "monospace" }}
-          />
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
-              Min score: <strong style={{ color: "#f0ede8" }}>{minScore}</strong>
-            </span>
-            <input type="range" min="0" max="9" value={minScore} onChange={e => setMinScore(Number(e.target.value))}
-              style={{ width: "80px", accentColor: "#00e5a0" }} />
-          </div>
+              <input value={regionFilter} onChange={e => setRegionFilter(e.target.value)} placeholder="Region (UKE…)"
+                title="Filter by NUTS delivery region prefix"
+                style={{ width: "120px", padding: "8px 10px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none" }} />
+              <input value={cpvFilter} onChange={e => setCpvFilter(e.target.value)} placeholder="CPV (71314…)"
+                title="Filter by CPV code prefix"
+                style={{ width: "130px", padding: "8px 10px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", fontFamily: "monospace" }} />
 
-          <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.35)", whiteSpace: "nowrap" }}>
-            {filtered.length} result{filtered.length !== 1 ? "s" : ""} of {tenders.length} tenders
-          </span>
+              <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
+                <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
+                  Score ≥ <strong style={{ color: "#f0ede8" }}>{minScore}</strong>
+                </span>
+                <input type="range" min="0" max="9" value={minScore} onChange={e => setMinScore(Number(e.target.value))}
+                  style={{ width: "72px", accentColor: "#00e5a0" }} />
+              </div>
 
-          <button onClick={handleDownload} disabled={downloading || !apiHealthy}
-            title="Download all tenders as CSV. Active filters applied."
-            style={{ display: "flex", alignItems: "center", gap: "6px", padding: "8px 14px", borderRadius: "7px", background: downloading ? "rgba(255,255,255,0.04)" : "rgba(245,200,66,0.12)", border: `1px solid ${downloading ? "rgba(255,255,255,0.1)" : "rgba(245,200,66,0.3)"}`, color: downloading ? "rgba(255,255,255,0.3)" : "#f5c842", fontSize: "12px", fontWeight: 600, cursor: downloading || !apiHealthy ? "not-allowed" : "pointer", letterSpacing: "0.04em", whiteSpace: "nowrap", transition: "all 0.2s" }}>
-            <span style={{ fontSize: "14px" }}>{downloading ? "⏳" : "⬇"}</span>
-            {downloading ? "Downloading…" : "Export CSV"}
-          </button>
-        </div>
+              <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
+                {filtered.length} of {tenders.length}
+              </span>
 
-        {downloadError && (
-          <div style={{ marginBottom: "16px", padding: "10px 14px", borderRadius: "8px", background: "rgba(198,40,40,0.1)", border: "1px solid rgba(198,40,40,0.3)", fontSize: "12px", color: "#ef9a9a" }}>
-            ⚠ CSV download failed: {downloadError}
-          </div>
-        )}
-
-        {/* ── CSV info banner ── */}
-        <div style={{ marginBottom: "16px", padding: "10px 14px", borderRadius: "8px", background: "rgba(245,200,66,0.06)", border: "1px solid rgba(245,200,66,0.15)", display: "flex", alignItems: "center", gap: "10px" }}>
-          <span style={{ fontSize: "13px" }}>📋</span>
-          <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", lineHeight: "1.5" }}>
-            <strong style={{ color: "#f5c842" }}>Export CSV</strong> downloads <strong style={{ color: "rgba(255,255,255,0.7)" }}>all {tenders.length} tenders</strong> including out-of-scope ones.
-            Active source, scope, category and search filters are applied. Min score slider is ignored.
-          </span>
-        </div>
-
-        {/* Source legend */}
-        <div style={{ display: "flex", gap: "16px", marginBottom: "16px", flexWrap: "wrap" }}>
-          {[
-            { code: "FaT", label: `Find a Tender (${sourceCounts["Find a Tender"] ?? 0})`,       color: "#b48ef5" },
-            { code: "CF",  label: `Contracts Finder (${sourceCounts["Contracts Finder"] ?? 0})`, color: "#5babff" },
-            { code: "S2W", label: `Sell2Wales (${sourceCounts["Sell2Wales"] ?? 0})`,              color: "#ff7070" },
-            { code: "PCS", label: `Public Contracts Scotland (${sourceCounts["Public Contracts Scotland"] ?? 0})`, color: "#00c878" },
-          ].map(({ code, label, color }) => (
-            <div key={code} style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", color: "rgba(255,255,255,0.45)" }}>
-              <span style={{ padding: "1px 6px", borderRadius: "4px", background: `${color}22`, border: `1px solid ${color}55`, color, fontWeight: 700, fontSize: "10px" }}>{code}</span>
-              {label}
+              <button onClick={handleDownload} disabled={downloading || !apiHealthy}
+                title="Download filtered tenders as CSV"
+                style={{ display: "flex", alignItems: "center", gap: "5px", padding: "7px 12px", borderRadius: "7px", background: downloading ? "rgba(255,255,255,0.04)" : "rgba(245,200,66,0.12)", border: `1px solid ${downloading ? "rgba(255,255,255,0.1)" : "rgba(245,200,66,0.3)"}`, color: downloading ? "rgba(255,255,255,0.3)" : "#f5c842", fontSize: "12px", fontWeight: 600, cursor: downloading || !apiHealthy ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}>
+                {downloading ? "⏳ Downloading…" : "⬇ Export CSV"}
+              </button>
             </div>
-          ))}
-        </div>
 
-        {/* ── Main grid ── */}
-        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 380px" : "1fr", gap: "20px", alignItems: "start" }}>
-          <div>
+            {downloadError && (
+              <div style={{ marginBottom: "12px", padding: "9px 13px", borderRadius: "7px", background: "rgba(198,40,40,0.1)", border: "1px solid rgba(198,40,40,0.3)", fontSize: "12px", color: "#ef9a9a" }}>
+                ⚠ CSV download failed: {downloadError}
+              </div>
+            )}
+
+            {/* Tender list */}
             {filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)" }}>
                 <div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div>
@@ -1884,7 +1931,7 @@ export default function NordicTenderFinder() {
               </div>
             ) : (
               filtered.map((t, i) => (
-                <div key={t.id} className="fade-up" style={{ animationDelay: `${i * 0.03}s` }}>
+                <div key={t.id} className="fade-up" style={{ animationDelay: `${Math.min(i, 30) * 0.025}s` }}>
                   <TenderCard
                     tender={t}
                     onClick={setSelected}
@@ -1895,34 +1942,42 @@ export default function NordicTenderFinder() {
                 </div>
               ))
             )}
-          </div>
-          {selected && (
-            <DetailPanel
-              tender={selected}
-              onClose={() => setSelected(null)}
-              isShortlisted={shortlistIds.has(selected.id)}
-              onToggleShortlist={() => handleToggleShortlist(selected)}
-              shortlistEntry={shortlistEntries.find(e => e.tender_id === selected.id)}
-              onFeedbackSave={handleFeedbackSave}
-            />
-          )}
-        </div>
+          </>}
+        </main>
 
-        </> /* end activeTab === "tenders" */ }
+        {/* RIGHT: category sidebar (tenders) or hidden (other tabs) */}
+        {activeTab === "tenders" && (
+          <aside style={{
+            width: selected ? "400px" : "190px",
+            flexShrink: 0,
+            borderLeft: "1px solid rgba(255,255,255,0.06)",
+            overflowY: "auto",
+            transition: "width 0.22s ease",
+          }}>
+            {selected ? (
+              <div style={{ padding: "20px" }}>
+                <DetailPanel
+                  tender={selected}
+                  onClose={() => setSelected(null)}
+                  isShortlisted={shortlistIds.has(selected.id)}
+                  onToggleShortlist={() => handleToggleShortlist(selected)}
+                  shortlistEntry={shortlistEntries.find(e => e.tender_id === selected.id)}
+                  onFeedbackSave={handleFeedbackSave}
+                />
+              </div>
+            ) : (
+              <div style={{ padding: "16px 12px" }}>
+                <CategorySidebar
+                  tenders={tenders}
+                  activeCategory={categoryFilter}
+                  onSelect={setCategoryFilter}
+                  sourceCounts={sourceCounts}
+                />
+              </div>
+            )}
+          </aside>
+        )}
 
-        {/* ── Footer ── */}
-        <div style={{ marginTop: "40px", paddingTop: "20px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.25)", lineHeight: "1.6" }}>
-            Scores computed server-side against Nordic Energy's scope: Renewables · Heat Networks · Advisory.<br />
-            Data from Find a Tender, Contracts Finder, Sell2Wales and Public Contracts Scotland (OCDS) via FastAPI at <span style={{ fontFamily: "monospace" }}>{API_BASE}</span>.
-          </p>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <a href="https://www.find-tender.service.gov.uk" target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "rgba(138,99,210,0.6)", textDecoration: "none" }}>Find a Tender ↗</a>
-            <a href="https://www.contractsfinder.service.gov.uk" target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "rgba(30,144,255,0.6)", textDecoration: "none" }}>Contracts Finder ↗</a>
-            <a href="https://www.sell2wales.gov.wales" target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "rgba(220,50,50,0.6)", textDecoration: "none" }}>Sell2Wales ↗</a>
-            <a href="https://www.publiccontractsscotland.gov.uk" target="_blank" rel="noopener noreferrer" style={{ fontSize: "11px", color: "rgba(0,180,120,0.6)", textDecoration: "none" }}>Public Contracts Scotland ↗</a>
-          </div>
-        </div>
       </div>
     </div>
   );

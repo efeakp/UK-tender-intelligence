@@ -42,5 +42,27 @@
       "updated_at": null,
       "updated_by": null
     }
+  },
+  "FAT-045193-2026": {
+    "tender_id": "FAT-045193-2026",
+    "tender_title": "Scotland's Public Sector Heat Decarbonisation Framework",
+    "tender_authority": "Scottish Government",
+    "tender_value": "£75,000,000",
+    "tender_deadline": "2026-06-22T12:00:00+01:00",
+    "tender_score": 10.0,
+    "tender_source": "Find a Tender",
+    "tender_url": "https://www.find-tender.service.gov.uk/Notice/045193-2026",
+    "shortlisted_by": null,
+    "shortlisted_at": "2026-05-26T08:33:36.997277+00:00",
+    "feedback": {
+      "bid_decision": "under-review",
+      "confidence": null,
+      "score_accuracy": null,
+      "team_notes": "",
+      "management_notes": "",
+      "outcome": "pending",
+      "updated_at": null,
+      "updated_by": null
+    }
   }
 }
