@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import tenders, sources, refresh, export, summarise, digest, market
+from app.routers import tenders, sources, refresh, export, summarise, digest, market, shortlist
 from app.models.tender import HealthResponse
 from app.dependencies import cache
 
@@ -76,7 +76,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -89,6 +89,7 @@ app.include_router(export.router)
 app.include_router(summarise.router)
 app.include_router(digest.router)
 app.include_router(market.router)
+app.include_router(shortlist.router)
 
 
 # ── Health check ──────────────────────────────────────────────────────────────

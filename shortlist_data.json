@@ -1,0 +1,46 @@
+{
+  "PCS-ocds-r6ebe6-0000828630": {
+    "tender_id": "PCS-ocds-r6ebe6-0000828630",
+    "tender_title": "Microgrid Feasibility Study for Barra and Vatersay",
+    "tender_authority": "Barra and Vatersay Wind Energy Limited",
+    "tender_value": "£30,000",
+    "tender_deadline": "2026-06-01T12:00:00Z",
+    "tender_score": 10.0,
+    "tender_source": "Public Contracts Scotland",
+    "tender_url": "https://www.publiccontractsscotland.gov.uk/Search/Search_Switch.aspx?ID=0000828630",
+    "shortlisted_by": null,
+    "shortlisted_at": "2026-05-26T06:09:11.036864+00:00",
+    "feedback": {
+      "bid_decision": "under-review",
+      "confidence": null,
+      "score_accuracy": null,
+      "team_notes": "",
+      "management_notes": "",
+      "outcome": "pending",
+      "updated_at": null,
+      "updated_by": null
+    }
+  },
+  "FAT-033734-2026": {
+    "tender_id": "FAT-033734-2026",
+    "tender_title": "PIN - Easter Langlee Solar PV Feasibility Study",
+    "tender_authority": "Scottish Borders Council",
+    "tender_value": "Value not stated",
+    "tender_deadline": null,
+    "tender_score": 10.0,
+    "tender_source": "Find a Tender",
+    "tender_url": "https://www.find-tender.service.gov.uk/Notice/033734-2026",
+    "shortlisted_by": null,
+    "shortlisted_at": "2026-05-26T06:27:31.858739+00:00",
+    "feedback": {
+      "bid_decision": "under-review",
+      "confidence": null,
+      "score_accuracy": null,
+      "team_notes": "",
+      "management_notes": "",
+      "outcome": "pending",
+      "updated_at": null,
+      "updated_by": null
+    }
+  }
+}

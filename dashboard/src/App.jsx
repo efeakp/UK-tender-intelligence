@@ -121,6 +121,48 @@ async function downloadCsv({ source, scope, category, search }) {
   }
 }
 
+// ─── Shortlist API helpers ────────────────────────────────────────────────────
+
+async function apiAddShortlist(tender) {
+  const res = await fetch(`${API_BASE}/shortlist/${encodeURIComponent(tender.id)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      tender_title:     tender.title,
+      tender_authority: tender.authority,
+      tender_value:     tender.value,
+      tender_deadline:  tender.deadline,
+      tender_score:     tender.score,
+      tender_source:    tender.source,
+      tender_url:       tender.url,
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function apiRemoveShortlist(tenderId) {
+  const res = await fetch(`${API_BASE}/shortlist/${encodeURIComponent(tenderId)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function apiUpdateFeedback(tenderId, feedback) {
+  const res = await fetch(`${API_BASE}/shortlist/${encodeURIComponent(tenderId)}/feedback`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(feedback),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+async function apiLoadShortlist() {
+  const res = await fetch(`${API_BASE}/shortlist`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function ScoreBar({ score }) {
@@ -224,6 +266,35 @@ function WatchlistBadge({ authority }) {
   );
 }
 
+function ShortlistButton({ isShortlisted, onClick, size = "card" }) {
+  const small = size === "card";
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); onClick(); }}
+      title={isShortlisted ? "Remove from shortlist" : "Add to shortlist"}
+      style={{
+        background: isShortlisted ? "rgba(245,200,66,0.18)" : "rgba(255,255,255,0.06)",
+        border: `1px solid ${isShortlisted ? "rgba(245,200,66,0.5)" : "rgba(255,255,255,0.12)"}`,
+        borderRadius: "6px",
+        color: isShortlisted ? "#f5c842" : "rgba(255,255,255,0.3)",
+        cursor: "pointer",
+        fontSize: small ? "13px" : "16px",
+        padding: small ? "2px 7px" : "6px 14px",
+        lineHeight: 1,
+        display: "flex",
+        alignItems: "center",
+        gap: "5px",
+        fontWeight: 600,
+        transition: "all 0.15s",
+        flexShrink: 0,
+      }}
+    >
+      {isShortlisted ? "★" : "☆"}
+      {!small && <span style={{ fontSize: "12px" }}>{isShortlisted ? "Shortlisted" : "Shortlist"}</span>}
+    </button>
+  );
+}
+
 // Notice type badge — shows UK1/UK2/UK3/UK4 with UK3 highlighted as urgent
 function NoticeBadge({ noticeType }) {
   if (!noticeType) return null;
@@ -251,7 +322,7 @@ function NoticeBadge({ noticeType }) {
   );
 }
 
-function TenderCard({ tender, onClick, selected }) {
+function TenderCard({ tender, onClick, selected, isShortlisted, onToggleShortlist }) {
   const { color } = scoreLabel(tender.score);
   return (
     <div
@@ -275,8 +346,9 @@ function TenderCard({ tender, onClick, selected }) {
             {tender.title}
           </div>
         </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", flexShrink: 0 }}>
           <div style={{ fontSize: "13px", fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{tender.score}/10</div>
+          {onToggleShortlist && <ShortlistButton isShortlisted={isShortlisted} onClick={onToggleShortlist} size="card" />}
         </div>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -367,7 +439,7 @@ function AiPanel({ summary, loading, error }) {
   );
 }
 
-function DetailPanel({ tender, onClose }) {
+function DetailPanel({ tender, onClose, isShortlisted, onToggleShortlist, shortlistEntry, onFeedbackSave }) {
   const [aiSummary, setAiSummary]   = React.useState(null);
   const [aiLoading, setAiLoading]   = React.useState(false);
   const [aiError, setAiError]       = React.useState(null);
@@ -376,6 +448,7 @@ function DetailPanel({ tender, onClose }) {
   const [recordLoading, setRecordLoading] = React.useState(false);
   const [recordError, setRecordError]     = React.useState(null);
   const [recordOpen, setRecordOpen]       = React.useState(false);
+  const [feedbackOpen, setFeedbackOpen]   = React.useState(false);
 
   // Reset all state when tender changes
   React.useEffect(() => {
@@ -435,7 +508,12 @@ function DetailPanel({ tender, onClose }) {
           <CategoryBadge category={tender.category} />
           {tender.scopes.map(s => <ScopeTag key={s} scope={s} />)}
         </div>
-        <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: "18px", padding: "0", lineHeight: 1 }}>✕</button>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {onToggleShortlist && (
+            <ShortlistButton isShortlisted={isShortlisted} onClick={onToggleShortlist} size="panel" />
+          )}
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: "18px", padding: "0", lineHeight: 1 }}>✕</button>
+        </div>
       </div>
       <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "20px", color: "#f0ede8", lineHeight: "1.35", marginBottom: "16px", fontWeight: 400 }}>
         {tender.title}
@@ -578,6 +656,20 @@ function DetailPanel({ tender, onClose }) {
         </button>
       ) : (
         <AiPanel summary={aiSummary} loading={aiLoading} error={aiError} />
+      )}
+
+      {/* Bid Assessment (only when shortlisted) */}
+      {isShortlisted && (
+        <div style={{ marginBottom: "12px" }}>
+          <button
+            onClick={() => setFeedbackOpen(o => !o)}
+            style={{ width: "100%", padding: "9px", borderRadius: "8px", background: feedbackOpen ? "rgba(245,200,66,0.12)" : "rgba(245,200,66,0.06)", border: "1px solid rgba(245,200,66,0.3)", color: "#f5c842", fontSize: "12px", fontWeight: 600, cursor: "pointer", letterSpacing: "0.04em", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+            📋 {feedbackOpen ? "Hide" : "Edit"} Bid Assessment
+          </button>
+          {feedbackOpen && onFeedbackSave && (
+            <InlineFeedbackForm entry={shortlistEntry} onSave={fb => onFeedbackSave(tender.id, fb)} />
+          )}
+        </div>
       )}
 
       <a href={tender.url} target="_blank" rel="noopener noreferrer"
@@ -1045,6 +1137,382 @@ function MarketTab() {
   );
 }
 
+// ─── Inline Feedback Form ─────────────────────────────────────────────────────
+
+function InlineFeedbackForm({ entry, onSave }) {
+  const fb = entry?.feedback || {};
+  const [decision,   setDecision]   = React.useState(fb.bid_decision   || "under-review");
+  const [confidence, setConfidence] = React.useState(fb.confidence     || "");
+  const [accuracy,   setAccuracy]   = React.useState(fb.score_accuracy || 0);
+  const [outcome,    setOutcome]    = React.useState(fb.outcome         || "pending");
+  const [teamNotes,  setTeamNotes]  = React.useState(fb.team_notes     || "");
+  const [mgmtNotes,  setMgmtNotes]  = React.useState(fb.management_notes || "");
+  const [saving,     setSaving]     = React.useState(false);
+  const [saved,      setSaved]      = React.useState(false);
+
+  React.useEffect(() => {
+    const fb2 = entry?.feedback || {};
+    setDecision(fb2.bid_decision || "under-review");
+    setConfidence(fb2.confidence || "");
+    setAccuracy(fb2.score_accuracy || 0);
+    setOutcome(fb2.outcome || "pending");
+    setTeamNotes(fb2.team_notes || "");
+    setMgmtNotes(fb2.management_notes || "");
+    setSaved(false);
+  }, [entry?.tender_id]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onSave({ bid_decision: decision, confidence, score_accuracy: accuracy || null, outcome, team_notes: teamNotes, management_notes: mgmtNotes });
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const decisionCfg = {
+    "go":            { color: "#00e5a0", bg: "rgba(0,229,160,0.12)",   label: "Go"             },
+    "no-go":         { color: "#ff6b6b", bg: "rgba(255,107,107,0.12)", label: "No-go"          },
+    "under-review":  { color: "#f5c842", bg: "rgba(245,200,66,0.12)",  label: "Under Review"   },
+    "bid-submitted": { color: "#64a0ff", bg: "rgba(100,160,255,0.12)", label: "Bid Submitted"  },
+  };
+
+  return (
+    <div style={{ marginTop: "10px", padding: "16px", borderRadius: "8px", background: "rgba(245,200,66,0.05)", border: "1px solid rgba(245,200,66,0.2)" }}>
+      <div style={{ fontSize: "10px", color: "rgba(245,200,66,0.7)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "14px" }}>Bid Assessment</div>
+
+      {/* Bid Decision */}
+      <div style={{ marginBottom: "12px" }}>
+        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Bid Decision</div>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+          {Object.entries(decisionCfg).map(([k, c]) => (
+            <button key={k} onClick={() => setDecision(k)}
+              style={{ padding: "5px 12px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, cursor: "pointer", border: `1px solid ${decision === k ? c.color + "99" : "rgba(255,255,255,0.1)"}`, background: decision === k ? c.bg : "rgba(255,255,255,0.04)", color: decision === k ? c.color : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Confidence + Outcome row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "12px" }}>
+        <div>
+          <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Confidence</div>
+          <select value={confidence} onChange={e => setConfidence(e.target.value)}
+            style={{ width: "100%", padding: "7px 9px", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none" }}>
+            <option value="" style={{ background: "#1a2030" }}>— Select —</option>
+            <option value="high"   style={{ background: "#1a2030" }}>High</option>
+            <option value="medium" style={{ background: "#1a2030" }}>Medium</option>
+            <option value="low"    style={{ background: "#1a2030" }}>Low</option>
+          </select>
+        </div>
+        <div>
+          <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>Outcome</div>
+          <select value={outcome} onChange={e => setOutcome(e.target.value)}
+            style={{ width: "100%", padding: "7px 9px", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none" }}>
+            <option value="pending"   style={{ background: "#1a2030" }}>Pending</option>
+            <option value="won"       style={{ background: "#1a2030" }}>Won</option>
+            <option value="lost"      style={{ background: "#1a2030" }}>Lost</option>
+            <option value="withdrawn" style={{ background: "#1a2030" }}>Withdrawn</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Score accuracy */}
+      <div style={{ marginBottom: "12px" }}>
+        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "6px" }}>
+          AI Score Accuracy <span style={{ color: "rgba(255,255,255,0.2)", textTransform: "none", letterSpacing: 0, fontSize: "10px" }}>(1 = way off · 5 = spot-on)</span>
+        </div>
+        <div style={{ display: "flex", gap: "6px" }}>
+          {[1, 2, 3, 4, 5].map(n => (
+            <button key={n} onClick={() => setAccuracy(n)}
+              style={{ width: "32px", height: "28px", borderRadius: "6px", fontSize: "12px", fontWeight: 700, cursor: "pointer", border: `1px solid ${accuracy >= n ? "rgba(180,142,245,0.5)" : "rgba(255,255,255,0.1)"}`, background: accuracy >= n ? "rgba(180,142,245,0.15)" : "rgba(255,255,255,0.04)", color: accuracy >= n ? "#b48ef5" : "rgba(255,255,255,0.35)" }}>
+              {n}
+            </button>
+          ))}
+          {accuracy > 0 && <button onClick={() => setAccuracy(0)} style={{ fontSize: "10px", padding: "0 8px", borderRadius: "6px", background: "none", border: "none", color: "rgba(255,255,255,0.25)", cursor: "pointer" }}>clear</button>}
+        </div>
+      </div>
+
+      {/* Team notes */}
+      <div style={{ marginBottom: "10px" }}>
+        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "5px" }}>Team Notes</div>
+        <textarea value={teamNotes} onChange={e => setTeamNotes(e.target.value)} rows={2} placeholder="Bid team observations, resource notes, risks…"
+          style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", resize: "vertical", outline: "none", lineHeight: "1.5", fontFamily: "inherit" }} />
+      </div>
+
+      {/* Management notes */}
+      <div style={{ marginBottom: "14px" }}>
+        <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "5px" }}>Management Notes</div>
+        <textarea value={mgmtNotes} onChange={e => setMgmtNotes(e.target.value)} rows={2} placeholder="Strategic rationale, approval comments, escalation notes…"
+          style={{ width: "100%", padding: "8px 10px", borderRadius: "6px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(245,200,66,0.2)", color: "#f0ede8", fontSize: "12px", resize: "vertical", outline: "none", lineHeight: "1.5", fontFamily: "inherit" }} />
+      </div>
+
+      <button onClick={handleSave} disabled={saving}
+        style={{ width: "100%", padding: "9px", borderRadius: "7px", background: saved ? "rgba(0,229,160,0.15)" : "rgba(245,200,66,0.15)", border: `1px solid ${saved ? "rgba(0,229,160,0.4)" : "rgba(245,200,66,0.4)"}`, color: saved ? "#00e5a0" : "#f5c842", fontSize: "12px", fontWeight: 600, cursor: saving ? "not-allowed" : "pointer" }}>
+        {saving ? "Saving…" : saved ? "✓ Saved" : "Save Assessment"}
+      </button>
+    </div>
+  );
+}
+
+// ─── Shortlist Tab ────────────────────────────────────────────────────────────
+
+const DECISION_CFG = {
+  "go":            { color: "#00e5a0", bg: "rgba(0,229,160,0.12)",   label: "Go"            },
+  "no-go":         { color: "#ff6b6b", bg: "rgba(255,107,107,0.12)", label: "No-go"         },
+  "under-review":  { color: "#f5c842", bg: "rgba(245,200,66,0.12)",  label: "Under Review"  },
+  "bid-submitted": { color: "#64a0ff", bg: "rgba(100,160,255,0.12)", label: "Bid Submitted" },
+};
+
+const OUTCOME_CFG = {
+  "pending":   { color: "rgba(255,255,255,0.4)", label: "Pending"   },
+  "won":       { color: "#00e5a0",               label: "Won"       },
+  "lost":      { color: "#ff6b6b",               label: "Lost"      },
+  "withdrawn": { color: "#f5a142",               label: "Withdrawn" },
+};
+
+function ShortlistTab({ entries, liveTenders, onFeedbackSave, onRemove, onExportCsv }) {
+  const [view,     setView]     = React.useState("list"); // "list" | "review"
+  const [selected, setSelected] = React.useState(null);
+  const [decFilter, setDecFilter] = React.useState("All");
+
+  // Merge live tender data into shortlist entries
+  const tenderMap = React.useMemo(() => {
+    const m = {};
+    liveTenders.forEach(t => { m[t.id] = t; });
+    return m;
+  }, [liveTenders]);
+
+  const enriched = entries.map(e => ({
+    ...e,
+    live: tenderMap[e.tender_id] || null,
+  }));
+
+  const filtered = decFilter === "All" ? enriched
+    : enriched.filter(e => (e.feedback?.bid_decision || "under-review") === decFilter);
+
+  const counts = Object.fromEntries(
+    Object.keys(DECISION_CFG).map(k => [k, enriched.filter(e => (e.feedback?.bid_decision || "under-review") === k).length])
+  );
+
+  if (entries.length === 0) {
+    return (
+      <div className="fade-up" style={{ textAlign: "center", padding: "80px 20px", color: "rgba(255,255,255,0.3)" }}>
+        <div style={{ fontSize: "40px", marginBottom: "14px" }}>★</div>
+        <div style={{ fontSize: "15px", color: "rgba(255,255,255,0.45)", marginBottom: "8px" }}>No tenders shortlisted yet</div>
+        <div style={{ fontSize: "12px" }}>Click the ☆ star on any tender card or in the detail panel to add it to your shortlist.</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-up">
+      {/* Header row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+        <div>
+          <div style={{ fontSize: "14px", color: "#f0ede8", fontWeight: 600, marginBottom: "3px" }}>Shortlisted Tenders</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>{entries.length} tender{entries.length !== 1 ? "s" : ""} shortlisted for bid assessment</div>
+        </div>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button onClick={() => setView("list")}
+            style={{ padding: "7px 14px", borderRadius: "7px", fontSize: "12px", fontWeight: 600, cursor: "pointer", border: "none", background: view === "list" ? "rgba(0,229,160,0.12)" : "rgba(255,255,255,0.05)", outline: view === "list" ? "1px solid rgba(0,229,160,0.3)" : "1px solid rgba(255,255,255,0.08)", color: view === "list" ? "#00e5a0" : "rgba(255,255,255,0.45)" }}>
+            List View
+          </button>
+          <button onClick={() => setView("review")}
+            style={{ padding: "7px 14px", borderRadius: "7px", fontSize: "12px", fontWeight: 600, cursor: "pointer", border: "none", background: view === "review" ? "rgba(245,200,66,0.12)" : "rgba(255,255,255,0.05)", outline: view === "review" ? "1px solid rgba(245,200,66,0.3)" : "1px solid rgba(255,255,255,0.08)", color: view === "review" ? "#f5c842" : "rgba(255,255,255,0.45)" }}>
+            Management Review
+          </button>
+          <button onClick={onExportCsv}
+            style={{ padding: "7px 14px", borderRadius: "7px", fontSize: "12px", fontWeight: 600, cursor: "pointer", border: "none", background: "rgba(255,255,255,0.05)", outline: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.45)" }}>
+            ⬇ Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Decision filter strip */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+        {[["All", entries.length, "rgba(255,255,255,0.45)", "rgba(255,255,255,0.1)"], ...Object.entries(DECISION_CFG).map(([k, c]) => [k, counts[k] || 0, c.color, c.color])].map(([k, cnt, color, border]) => (
+          <button key={k} onClick={() => setDecFilter(k)}
+            style={{ padding: "5px 14px", borderRadius: "20px", fontSize: "11px", fontWeight: 600, cursor: "pointer", border: `1px solid ${decFilter === k ? border + "88" : "rgba(255,255,255,0.08)"}`, background: decFilter === k ? `${border}18` : "rgba(255,255,255,0.03)", color: decFilter === k ? color : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}>
+            {k === "All" ? "All" : (DECISION_CFG[k]?.label || k)} <span style={{ opacity: 0.65, fontWeight: 400 }}>({cnt})</span>
+          </button>
+        ))}
+      </div>
+
+      {view === "list" && (
+        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 400px" : "1fr", gap: "20px", alignItems: "start" }}>
+          <div>
+            {filtered.map((e, i) => {
+              const fb = e.feedback || {};
+              const dec = DECISION_CFG[fb.bid_decision] || DECISION_CFG["under-review"];
+              const out = OUTCOME_CFG[fb.outcome] || OUTCOME_CFG["pending"];
+              const t = e.live;
+              return (
+                <div key={e.tender_id} className="fade-up" style={{ animationDelay: `${i * 0.03}s` }}
+                  onClick={() => setSelected(selected?.tender_id === e.tender_id ? null : e)}
+                >
+                  <div style={{ cursor: "pointer", padding: "16px 20px", borderRadius: "10px", background: selected?.tender_id === e.tender_id ? "rgba(245,200,66,0.06)" : "rgba(255,255,255,0.03)", border: `1px solid ${selected?.tender_id === e.tender_id ? "rgba(245,200,66,0.3)" : "rgba(255,255,255,0.07)"}`, marginBottom: "8px", transition: "all 0.2s" }}
+                    onMouseEnter={ev => { if (selected?.tender_id !== e.tender_id) ev.currentTarget.style.background = "rgba(255,255,255,0.055)"; }}
+                    onMouseLeave={ev => { if (selected?.tender_id !== e.tender_id) ev.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", marginBottom: "8px" }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", gap: "6px", marginBottom: "7px", flexWrap: "wrap", alignItems: "center" }}>
+                          {t && <SourceBadge source={t.source} />}
+                          <span style={{ fontSize: "10px", padding: "2px 9px", borderRadius: "20px", background: dec.bg, border: `1px solid ${dec.color}55`, color: dec.color, fontWeight: 700, letterSpacing: "0.04em" }}>{dec.label}</span>
+                          <span style={{ fontSize: "10px", color: out.color, fontWeight: 600 }}>{out.label}</span>
+                          {fb.confidence && <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", padding: "1px 7px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.1)" }}>{fb.confidence} confidence</span>}
+                        </div>
+                        <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "14px", color: "#f0ede8", lineHeight: "1.4", fontWeight: 400 }}>{e.tender_title}</div>
+                        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "4px" }}>{e.tender_authority}</div>
+                      </div>
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: scoreLabel(e.tender_score || 0).color }}>{e.tender_score}/10</div>
+                        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginTop: "3px" }}>{e.tender_value}</div>
+                        <div style={{ fontSize: "11px", marginTop: "3px", color: deadlineColor(e.tender_deadline) }}>{formatDate(e.tender_deadline)}</div>
+                        <button onClick={ev => { ev.stopPropagation(); onRemove(e.tender_id); }}
+                          style={{ marginTop: "8px", fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", color: "#ff6b6b", cursor: "pointer" }}>
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                    {fb.team_notes && (
+                      <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", borderLeft: "2px solid rgba(255,255,255,0.1)", paddingLeft: "10px", marginTop: "4px", lineHeight: "1.5", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {fb.team_notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {selected && selected.live && (
+            <DetailPanel
+              tender={selected.live}
+              onClose={() => setSelected(null)}
+              isShortlisted={true}
+              shortlistEntry={selected}
+              onFeedbackSave={(id, fb) => onFeedbackSave(id, fb)}
+            />
+          )}
+          {selected && !selected.live && (
+            <div style={{ position: "sticky", top: 0, padding: "24px", background: "rgba(14,20,30,0.95)", borderRadius: "12px", border: "1px solid rgba(245,200,66,0.2)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
+                <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>Tender no longer in live cache</span>
+                <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", cursor: "pointer", fontSize: "18px" }}>✕</button>
+              </div>
+              <div style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "16px", color: "#f0ede8", marginBottom: "16px" }}>{selected.tender_title}</div>
+              <InlineFeedbackForm entry={selected} onSave={fb => onFeedbackSave(selected.tender_id, fb)} />
+            </div>
+          )}
+        </div>
+      )}
+
+      {view === "review" && (
+        <ManagementReview entries={enriched} onFeedbackSave={onFeedbackSave} />
+      )}
+    </div>
+  );
+}
+
+function ManagementReview({ entries, onFeedbackSave }) {
+  const won       = entries.filter(e => e.feedback?.outcome === "won").length;
+  const submitted = entries.filter(e => e.feedback?.bid_decision === "bid-submitted").length;
+  const goes      = entries.filter(e => e.feedback?.bid_decision === "go").length;
+  const nogo      = entries.filter(e => e.feedback?.bid_decision === "no-go").length;
+  const accuracyVals = entries.map(e => e.feedback?.score_accuracy).filter(Boolean);
+  const avgAccuracy  = accuracyVals.length ? (accuracyVals.reduce((a, b) => a + b, 0) / accuracyVals.length).toFixed(1) : "—";
+
+  return (
+    <div>
+      {/* KPI strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px", marginBottom: "24px" }}>
+        {[
+          { label: "Shortlisted",     value: entries.length, color: "#f5c842" },
+          { label: "Go Decisions",    value: goes,           color: "#00e5a0" },
+          { label: "No-go",           value: nogo,           color: "#ff6b6b" },
+          { label: "Bids Submitted",  value: submitted,      color: "#64a0ff" },
+          { label: "AI Accuracy",     value: `${avgAccuracy}/5`, color: "#b48ef5", isText: true },
+        ].map(({ label, value, color, isText }) => (
+          <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 16px" }}>
+            <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>{label}</div>
+            <div style={{ fontSize: isText ? "20px" : "26px", fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Review table */}
+      <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden" }}>
+        {/* Table header */}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 80px 90px 80px 80px 1fr", gap: "0", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "10px 16px" }}>
+          {["Tender", "Authority", "Value", "Decision", "Confidence", "Outcome", "Management Notes"].map(h => (
+            <div key={h} style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)", letterSpacing: "0.07em", textTransform: "uppercase", fontWeight: 600 }}>{h}</div>
+          ))}
+        </div>
+
+        {entries.map((e, i) => {
+          const fb  = e.feedback || {};
+          const dec = DECISION_CFG[fb.bid_decision] || DECISION_CFG["under-review"];
+          const out = OUTCOME_CFG[fb.outcome]       || OUTCOME_CFG["pending"];
+          return (
+            <div key={e.tender_id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 80px 90px 80px 80px 1fr", gap: "0", padding: "12px 16px", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none", alignItems: "start" }}>
+              <div>
+                <div style={{ fontSize: "12px", color: "#f0ede8", lineHeight: "1.35", marginBottom: "2px" }}>{e.tender_title}</div>
+                {fb.team_notes && <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", lineHeight: "1.4", marginTop: "3px", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{fb.team_notes}</div>}
+              </div>
+              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", paddingRight: "8px", lineHeight: "1.4" }}>{e.tender_authority}</div>
+              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)" }}>{e.tender_value}</div>
+              <div>
+                <span style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "10px", background: dec.bg, border: `1px solid ${dec.color}55`, color: dec.color, fontWeight: 700 }}>{dec.label}</span>
+              </div>
+              <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", textTransform: "capitalize" }}>{fb.confidence || "—"}</div>
+              <div style={{ fontSize: "11px", color: out.color, fontWeight: 600 }}>{out.label}</div>
+              <div>
+                <MgmtNoteCell tenderId={e.tender_id} note={fb.management_notes || ""} onSave={note => onFeedbackSave(e.tender_id, { management_notes: note })} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MgmtNoteCell({ tenderId, note, onSave }) {
+  const [editing, setEditing] = React.useState(false);
+  const [val,     setVal]     = React.useState(note);
+  const [saving,  setSaving]  = React.useState(false);
+
+  React.useEffect(() => { setVal(note); }, [note]);
+
+  const save = async () => {
+    setSaving(true);
+    await onSave(val);
+    setSaving(false);
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <div onClick={() => setEditing(true)} title="Click to edit" style={{ cursor: "pointer", fontSize: "11px", color: val ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.18)", lineHeight: "1.4", minHeight: "18px", padding: "2px 0" }}>
+        {val || "Add note…"}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <textarea value={val} onChange={e => setVal(e.target.value)} rows={2} autoFocus
+        style={{ width: "100%", padding: "5px 7px", borderRadius: "4px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(245,200,66,0.3)", color: "#f0ede8", fontSize: "11px", resize: "vertical", outline: "none", fontFamily: "inherit" }} />
+      <div style={{ display: "flex", gap: "5px", marginTop: "4px" }}>
+        <button onClick={save} disabled={saving} style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "rgba(0,229,160,0.12)", border: "1px solid rgba(0,229,160,0.3)", color: "#00e5a0", cursor: "pointer" }}>{saving ? "…" : "Save"}</button>
+        <button onClick={() => { setEditing(false); setVal(note); }} style={{ fontSize: "10px", padding: "2px 8px", borderRadius: "4px", background: "none", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.35)", cursor: "pointer" }}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
 export default function NordicTenderFinder() {
@@ -1066,7 +1534,55 @@ export default function NordicTenderFinder() {
   const [totalFromApi, setTotalFromApi]     = useState(0);
   const [downloading, setDownloading]       = useState(false);
   const [downloadError, setDownloadError]   = useState(null);
-  const [activeTab, setActiveTab]           = useState("tenders"); // "tenders" | "competitors"
+  const [activeTab, setActiveTab]           = useState("tenders"); // "tenders" | "competitors" | "shortlist"
+  const [shortlistEntries, setShortlistEntries] = useState([]);
+
+  // ── Shortlist helpers ─────────────────────────────────────────────────────
+  const shortlistIds = React.useMemo(() => new Set(shortlistEntries.map(e => e.tender_id)), [shortlistEntries]);
+
+  const loadShortlist = useCallback(async () => {
+    try {
+      const data = await apiLoadShortlist();
+      setShortlistEntries(Array.isArray(data) ? data : []);
+    } catch (_) { /* non-fatal */ }
+  }, []);
+
+  const handleToggleShortlist = useCallback(async (tender) => {
+    if (shortlistIds.has(tender.id)) {
+      try {
+        await apiRemoveShortlist(tender.id);
+        setShortlistEntries(prev => prev.filter(e => e.tender_id !== tender.id));
+      } catch (_) { /* ignore */ }
+    } else {
+      try {
+        const entry = await apiAddShortlist(tender);
+        setShortlistEntries(prev => [...prev, entry]);
+      } catch (_) { /* ignore */ }
+    }
+  }, [shortlistIds]);
+
+  const handleFeedbackSave = useCallback(async (tenderId, feedback) => {
+    try {
+      const updated = await apiUpdateFeedback(tenderId, feedback);
+      setShortlistEntries(prev => prev.map(e => e.tender_id === tenderId ? updated : e));
+    } catch (_) { /* ignore */ }
+  }, []);
+
+  const handleShortlistRemove = useCallback(async (tenderId) => {
+    try {
+      await apiRemoveShortlist(tenderId);
+      setShortlistEntries(prev => prev.filter(e => e.tender_id !== tenderId));
+    } catch (_) { /* ignore */ }
+  }, []);
+
+  const handleShortlistExportCsv = useCallback(() => {
+    const a = document.createElement("a");
+    a.href = `${API_BASE}/shortlist/export/csv`;
+    a.download = "nordic-shortlist.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, []);
 
   // ── Fetch from live API ───────────────────────────────────────────────────
   const loadTenders = useCallback(async () => {
@@ -1120,7 +1636,7 @@ export default function NordicTenderFinder() {
     setDownloading(false);
   }, [sourceFilter, scopeFilter, categoryFilter, search]);
 
-  useEffect(() => { loadTenders(); }, [loadTenders]);
+  useEffect(() => { loadTenders(); loadShortlist(); }, [loadTenders, loadShortlist]);
 
   // ── Client-side filtering ─────────────────────────────────────────────────
   useEffect(() => {
@@ -1214,6 +1730,7 @@ export default function NordicTenderFinder() {
             { id: "tenders",     label: "Tenders",              count: tenders.length },
             { id: "competitors", label: "Competitor Activity",   count: tenders.filter(t => t.competitor_win).length },
             { id: "market",      label: "Market Intelligence",   count: null },
+            { id: "shortlist",   label: "Shortlist",             count: shortlistEntries.length },
           ].map(tab => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               style={{
@@ -1231,6 +1748,16 @@ export default function NordicTenderFinder() {
         {activeTab === "competitors" && <CompetitorTab tenders={tenders} />}
 
         {activeTab === "market" && <MarketTab />}
+
+        {activeTab === "shortlist" && (
+          <ShortlistTab
+            entries={shortlistEntries}
+            liveTenders={tenders}
+            onFeedbackSave={handleFeedbackSave}
+            onRemove={handleShortlistRemove}
+            onExportCsv={handleShortlistExportCsv}
+          />
+        )}
 
         {activeTab === "tenders" && <>
 
@@ -1358,12 +1885,27 @@ export default function NordicTenderFinder() {
             ) : (
               filtered.map((t, i) => (
                 <div key={t.id} className="fade-up" style={{ animationDelay: `${i * 0.03}s` }}>
-                  <TenderCard tender={t} onClick={setSelected} selected={selected?.id === t.id} />
+                  <TenderCard
+                    tender={t}
+                    onClick={setSelected}
+                    selected={selected?.id === t.id}
+                    isShortlisted={shortlistIds.has(t.id)}
+                    onToggleShortlist={() => handleToggleShortlist(t)}
+                  />
                 </div>
               ))
             )}
           </div>
-          {selected && <DetailPanel tender={selected} onClose={() => setSelected(null)} />}
+          {selected && (
+            <DetailPanel
+              tender={selected}
+              onClose={() => setSelected(null)}
+              isShortlisted={shortlistIds.has(selected.id)}
+              onToggleShortlist={() => handleToggleShortlist(selected)}
+              shortlistEntry={shortlistEntries.find(e => e.tender_id === selected.id)}
+              onFeedbackSave={handleFeedbackSave}
+            />
+          )}
         </div>
 
         </> /* end activeTab === "tenders" */ }
