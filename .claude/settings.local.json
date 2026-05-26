@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:etendersni.gov.uk)",
-      "WebFetch(domain:www.etendersni.gov.uk)"
+      "WebFetch(domain:www.etendersni.gov.uk)",
+      "WebFetch(domain:api.ted.europa.eu)",
+      "WebFetch(domain:ted.europa.eu)",
+      "WebFetch(domain:supplier.proactis.com)"
     ]
   }
 }

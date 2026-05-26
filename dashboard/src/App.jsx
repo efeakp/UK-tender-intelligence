@@ -227,6 +227,9 @@ function SourceBadge({ source }) {
     "Public Contracts Scotland": { bg: "rgba(0,180,120,0.2)",   border: "rgba(0,180,120,0.4)",   color: "#00c878", label: "PCS"  },
     "Innovate UK":               { bg: "rgba(255,140,0,0.2)",   border: "rgba(255,140,0,0.4)",   color: "#ff8c00", label: "IUK"  },
     "TED (EU)":                  { bg: "rgba(0,112,204,0.2)",   border: "rgba(0,112,204,0.4)",   color: "#4da6ff", label: "TED"  },
+    "Proactis":                  { bg: "rgba(255,90,30,0.2)",   border: "rgba(255,90,30,0.4)",   color: "#ff6b3d", label: "PRO"  },
+    "Yortender":                 { bg: "rgba(120,80,200,0.2)",  border: "rgba(120,80,200,0.4)",  color: "#a07ef5", label: "YOR"  },
+    "In-Tend":                   { bg: "rgba(0,180,140,0.2)",   border: "rgba(0,180,140,0.4)",   color: "#00c48c", label: "INT"  },
   };
   const c = cfg[source] || { bg: "rgba(255,255,255,0.1)", border: "rgba(255,255,255,0.2)", color: "#ccc", label: source };
   return (

@@ -11,6 +11,9 @@ class TenderSource(str, Enum):
     PUBLIC_CONTRACTS_SCOTLAND = "Public Contracts Scotland"
     INNOVATE_UK               = "Innovate UK"
     TED                       = "TED (EU)"
+    PROACTIS                  = "Proactis"
+    YORTENDER                 = "Yortender"
+    INTEND                    = "In-Tend"
 
 
 class ScopeTag(str, Enum):

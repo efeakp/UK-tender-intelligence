@@ -15,7 +15,7 @@ from typing import List, Tuple, Optional
 
 import httpx
 
-from app.services import find_a_tender, contracts_finder, sell2wales, public_contracts_scotland
+from app.services import find_a_tender, contracts_finder, sell2wales, public_contracts_scotland, proactis, yortender, intend
 from app.services.scorer import bulk_score
 from app.models.tender import Tender, TenderSource
 
@@ -34,6 +34,9 @@ _SOURCE_INFO = [
     (TenderSource.CONTRACTS_FINDER,          "Contracts Finder",        contracts_finder.fetch_tenders),
     (TenderSource.SELL2WALES,               "Sell2Wales",              sell2wales.fetch_tenders),
     (TenderSource.PUBLIC_CONTRACTS_SCOTLAND, "Public Contracts Scotland", public_contracts_scotland.fetch_tenders),
+    (TenderSource.PROACTIS,                  "Proactis",                proactis.fetch_tenders),
+    (TenderSource.YORTENDER,                 "Yortender",               yortender.fetch_tenders),
+    (TenderSource.INTEND,                    "In-Tend",                 intend.fetch_tenders),
 ]
 
 
