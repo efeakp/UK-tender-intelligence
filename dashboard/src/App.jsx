@@ -226,6 +226,7 @@ function SourceBadge({ source }) {
     "Sell2Wales":                { bg: "rgba(220,50,50,0.2)",   border: "rgba(220,50,50,0.4)",   color: "#ff7070", label: "S2W" },
     "Public Contracts Scotland": { bg: "rgba(0,180,120,0.2)",   border: "rgba(0,180,120,0.4)",   color: "#00c878", label: "PCS"  },
     "Innovate UK":               { bg: "rgba(255,140,0,0.2)",   border: "rgba(255,140,0,0.4)",   color: "#ff8c00", label: "IUK"  },
+    "TED (EU)":                  { bg: "rgba(0,112,204,0.2)",   border: "rgba(0,112,204,0.4)",   color: "#4da6ff", label: "TED"  },
   };
   const c = cfg[source] || { bg: "rgba(255,255,255,0.1)", border: "rgba(255,255,255,0.2)", color: "#ccc", label: source };
   return (
@@ -1495,6 +1496,339 @@ function UKRITab() {
   );
 }
 
+// ─── TED (EU Procurement) Tab ────────────────────────────────────────────────
+
+const TED_CATEGORIES = ["All", "Opportunity", "Future Opportunity", "Awarded Contract"];
+const TED_SCOPES = [
+  "Service 01: Renewable Energy Opportunity Identification",
+  "Service 02: Energy Feasibility Studies",
+  "Service 03: Energy System Optimisation",
+  "Service 04: Business Case Development",
+];
+
+function TEDNoticeCard({ notice, selected, onClick }) {
+  const sl = scoreLabel(notice.score || 0);
+  const catCfg = {
+    "Opportunity":       { color: "#00e5a0", bg: "rgba(0,229,160,0.1)",   border: "rgba(0,229,160,0.25)"   },
+    "Future Opportunity":{ color: "#64a0ff", bg: "rgba(100,160,255,0.1)", border: "rgba(100,160,255,0.25)" },
+    "Awarded Contract":  { color: "#b48ef5", bg: "rgba(180,142,245,0.1)", border: "rgba(180,142,245,0.25)" },
+  };
+  const cc = catCfg[notice.category] || { color: "#aaa", bg: "rgba(255,255,255,0.04)", border: "rgba(255,255,255,0.08)" };
+  return (
+    <div onClick={onClick} style={{
+      padding: "14px 16px", borderRadius: "10px", cursor: "pointer", marginBottom: "8px",
+      background: selected ? "rgba(0,112,204,0.08)" : "rgba(255,255,255,0.03)",
+      border: `1px solid ${selected ? "rgba(0,112,204,0.35)" : "rgba(255,255,255,0.06)"}`,
+      transition: "all 0.15s",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "#f0ede8", marginBottom: "4px", lineHeight: 1.35 }}>{notice.title}</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", marginBottom: "6px" }}>{notice.authority}</div>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", fontWeight: 700,
+              background: cc.bg, border: `1px solid ${cc.border}`, color: cc.color,
+            }}>{notice.category}</span>
+            <SourceBadge source="TED (EU)" />
+            {notice.ted_country && (
+              <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.3)" }}>{notice.ted_country}</span>
+            )}
+            {notice.deadline && (
+              <span style={{ fontSize: "10px", color: deadlineColor(notice.deadline) }}>
+                {deadlineUrgency(notice.deadline) ? `⏰ ${deadlineUrgency(notice.deadline)}` : `Due ${formatDate(notice.deadline)}`}
+              </span>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: "12px", color: "#f5c842", fontWeight: 600, marginBottom: "3px" }}>{notice.value || "—"}</div>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: sl.color }}>{notice.score || 0}/10</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TEDDetailPanel({ notice, onClose }) {
+  if (!notice) return null;
+  const sl = scoreLabel(notice.score || 0);
+  const scopes   = notice.matched_scopes   || [];
+  const keywords = notice.matched_keywords || [];
+  const catCfg = {
+    "Opportunity":       { color: "#00e5a0" },
+    "Future Opportunity":{ color: "#64a0ff" },
+    "Awarded Contract":  { color: "#b48ef5" },
+  };
+  const catColor = (catCfg[notice.category] || { color: "#aaa" }).color;
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "12px", border: "1px solid rgba(0,112,204,0.2)", padding: "20px", position: "sticky", top: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <SourceBadge source="TED (EU)" />
+          {notice.ted_country && <span style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)" }}>{notice.ted_country}</span>}
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: "16px", padding: "0 2px" }}>✕</button>
+      </div>
+      <div style={{ fontSize: "14px", fontWeight: 600, color: "#f0ede8", marginBottom: "8px", lineHeight: 1.4 }}>{notice.title}</div>
+      <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", marginBottom: "14px" }}>{notice.authority}</div>
+
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+        <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", fontWeight: 700, color: catColor, background: `${catColor}18`, border: `1px solid ${catColor}44` }}>{notice.category}</span>
+        <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", background: `${sl.color}18`, border: `1px solid ${sl.color}44`, color: sl.color, fontWeight: 700 }}>{notice.score || 0}/10 — {sl.label}</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
+        {[
+          { label: "Value",     value: notice.value || "—" },
+          { label: "Currency",  value: notice.value_currency || "EUR" },
+          { label: "Published", value: formatDate(notice.published) },
+          { label: "Deadline",  value: formatDate(notice.deadline)  },
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>{label}</div>
+            <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.75)" }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {notice.description && (
+        <div style={{ marginBottom: "14px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "5px" }}>Description</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", lineHeight: 1.55, maxHeight: "100px", overflowY: "auto" }}>{notice.description}</div>
+        </div>
+      )}
+
+      {notice.cpv_codes?.length > 0 && (
+        <div style={{ marginBottom: "12px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>CPV Codes</div>
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {notice.cpv_codes.slice(0, 6).map(cpv => (
+              <span key={cpv} style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", background: "rgba(0,112,204,0.1)", border: "1px solid rgba(0,112,204,0.25)", color: "#4da6ff" }}>{cpv}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {scopes.length > 0 && (
+        <div style={{ marginBottom: "12px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Service Relevance</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {scopes.map(s => <ScopeTag key={s} scope={s} />)}
+          </div>
+        </div>
+      )}
+
+      {keywords.length > 0 && (
+        <div style={{ marginBottom: "14px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Matched Keywords</div>
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {keywords.map(kw => (
+              <span key={kw} style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", background: "rgba(0,229,160,0.08)", border: "1px solid rgba(0,229,160,0.2)", color: "#00e5a0" }}>{kw}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <a href={notice.url} target="_blank" rel="noopener noreferrer"
+        style={{ display: "block", textAlign: "center", padding: "9px 16px", borderRadius: "7px", background: "rgba(0,112,204,0.1)", border: "1px solid rgba(0,112,204,0.3)", color: "#4da6ff", fontSize: "12px", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
+        View on TED ↗
+      </a>
+    </div>
+  );
+}
+
+function TEDTab() {
+  const [status,      setStatus]      = useState(null);
+  const [notices,     setNotices]     = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [refreshing,  setRefreshing]  = useState(false);
+  const [error,       setError]       = useState(null);
+  const [selected,    setSelected]    = useState(null);
+  const [search,      setSearch]      = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [scopeFilter,    setScopeFilter]    = useState("All");
+  const [countryFilter,  setCountryFilter]  = useState("All");
+
+  const loadNotices = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/ted/notices?page_size=500&sort_by=score&sort_dir=desc`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setNotices(data.notices ?? []);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const checkStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/ted/status`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setStatus(data);
+      if (data.populated) await loadNotices();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerRefresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/ted/refresh`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setStatus({ populated: true, notice_count: data.notices_found });
+      await loadNotices();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { checkStatus(); }, []);
+
+  // Derive unique countries for filter
+  const countries = [...new Set(notices.map(n => n.ted_country).filter(Boolean))].sort();
+
+  const filtered = notices.filter(n => {
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      if (!((n.title || "").toLowerCase().includes(q) || (n.authority || "").toLowerCase().includes(q))) return false;
+    }
+    if (categoryFilter !== "All" && n.category !== categoryFilter) return false;
+    if (scopeFilter !== "All" && !(n.matched_scopes || []).includes(scopeFilter)) return false;
+    if (countryFilter !== "All" && n.ted_country !== countryFilter) return false;
+    return true;
+  });
+
+  const opportunityCount   = notices.filter(n => n.category === "Opportunity").length;
+  const futureCount        = notices.filter(n => n.category === "Future Opportunity").length;
+  const awardCount         = notices.filter(n => n.category === "Awarded Contract").length;
+  const totalValue         = notices.reduce((s, n) => s + (n.value_amount || 0), 0);
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.35)" }}>
+        <div style={{ width: "32px", height: "32px", border: "2px solid rgba(0,112,204,0.2)", borderTop: "2px solid #4da6ff", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+        <div style={{ fontSize: "13px" }}>Checking TED data…</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-up">
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+        <div>
+          <div style={{ fontSize: "14px", color: "#f0ede8", fontWeight: 600, marginBottom: "3px" }}>TED — EU Energy Procurement Notices</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
+            Tenders Electronic Daily · CPV codes 71314000–71314300 (energy services) · 09330000 (solar) · 09310000 (electricity) · No API key required
+          </div>
+        </div>
+        <button onClick={triggerRefresh} disabled={refreshing}
+          style={{ padding: "8px 16px", borderRadius: "7px", background: refreshing ? "rgba(255,255,255,0.04)" : "rgba(0,112,204,0.12)", border: `1px solid ${refreshing ? "rgba(255,255,255,0.1)" : "rgba(0,112,204,0.3)"}`, color: refreshing ? "rgba(255,255,255,0.3)" : "#4da6ff", fontSize: "12px", fontWeight: 600, cursor: refreshing ? "not-allowed" : "pointer", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
+          {refreshing ? "⏳ Fetching (~2 min)…" : status?.populated ? "↻ Refresh" : "Load TED Data"}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ marginBottom: "16px", padding: "12px 14px", borderRadius: "8px", background: "rgba(198,40,40,0.1)", border: "1px solid rgba(198,40,40,0.3)", fontSize: "12px", color: "#ef9a9a" }}>⚠ {error}</div>
+      )}
+
+      {refreshing && (
+        <div style={{ padding: "24px", borderRadius: "10px", background: "rgba(0,112,204,0.05)", border: "1px solid rgba(0,112,204,0.15)", textAlign: "center", marginBottom: "20px" }}>
+          <div style={{ width: "28px", height: "28px", border: "2px solid rgba(0,112,204,0.2)", borderTop: "2px solid #4da6ff", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+          <div style={{ fontSize: "13px", color: "#4da6ff", fontWeight: 600, marginBottom: "6px" }}>Fetching EU energy notices…</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
+            Querying TED for energy CPV codes (contract notices 6m · award notices 12m).<br />
+            This typically takes 1–2 minutes.
+          </div>
+        </div>
+      )}
+
+      {!status?.populated && !refreshing && (
+        <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>🇪🇺</div>
+          <div style={{ fontSize: "14px", marginBottom: "8px", color: "rgba(255,255,255,0.45)" }}>No TED data loaded yet.</div>
+          <div style={{ fontSize: "12px" }}>Click "Load TED Data" to fetch EU energy procurement notices from Tenders Electronic Daily.</div>
+        </div>
+      )}
+
+      {status?.populated && !refreshing && notices.length > 0 && (<>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "20px" }}>
+          {[
+            { label: "Active Tenders",    value: opportunityCount, color: "#00e5a0" },
+            { label: "Future / Pipeline", value: futureCount,      color: "#64a0ff" },
+            { label: "Awarded",           value: awardCount,       color: "#b48ef5" },
+            { label: "Total Value",       value: `€${(totalValue / 1e6).toFixed(1)}m`, color: "#f5c842", isText: true },
+          ].map(({ label, value, color, isText }) => (
+            <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 16px" }}>
+              <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>{label}</div>
+              <div style={{ fontSize: isText ? "18px" : "24px", fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search notices…"
+            style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", width: "180px" }}
+          />
+          <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}
+            style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", cursor: "pointer" }}>
+            {TED_CATEGORIES.map(c => <option key={c} value={c} style={{ background: "#1a2030" }}>{c === "All" ? "All Categories" : c}</option>)}
+          </select>
+          <select value={scopeFilter} onChange={e => setScopeFilter(e.target.value)}
+            style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", cursor: "pointer" }}>
+            <option value="All" style={{ background: "#1a2030" }}>All Scopes</option>
+            {TED_SCOPES.map(s => <option key={s} value={s} style={{ background: "#1a2030" }}>{s.split(":")[0]}</option>)}
+          </select>
+          {countries.length > 0 && (
+            <select value={countryFilter} onChange={e => setCountryFilter(e.target.value)}
+              style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", cursor: "pointer" }}>
+              <option value="All" style={{ background: "#1a2030" }}>All Countries</option>
+              {countries.map(c => <option key={c} value={c} style={{ background: "#1a2030" }}>{c}</option>)}
+            </select>
+          )}
+          <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{filtered.length} of {notices.length} notices</span>
+        </div>
+
+        {/* Notice list + detail panel */}
+        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 380px" : "1fr", gap: "20px", alignItems: "start" }}>
+          <div>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>No notices match current filters.</div>
+            ) : filtered.map((n, i) => (
+              <div key={n.id} className="fade-up" style={{ animationDelay: `${Math.min(i, 20) * 0.02}s` }}>
+                <TEDNoticeCard
+                  notice={n}
+                  selected={selected?.id === n.id}
+                  onClick={() => setSelected(selected?.id === n.id ? null : n)}
+                />
+              </div>
+            ))}
+          </div>
+          {selected && <TEDDetailPanel notice={selected} onClose={() => setSelected(null)} />}
+        </div>
+      </>)}
+    </div>
+  );
+}
+
 // ─── Inline Feedback Form ─────────────────────────────────────────────────────
 
 function InlineFeedbackForm({ entry, onSave }) {
@@ -2111,6 +2445,7 @@ export default function NordicTenderFinder() {
             { id: "competitors", label: "Competitor Activity", icon: "🏢", count: tenders.filter(t => t.competitor_win).length },
             { id: "market",      label: "Market Intelligence", icon: "📈", count: null },
             { id: "ukri",        label: "Innovate UK",         icon: "💡", count: null },
+            { id: "ted",         label: "EU Tenders (TED)",    icon: "🇪🇺", count: null },
             { id: "shortlist",   label: "Shortlist",           icon: "★",  count: shortlistEntries.length },
           ].map(tab => {
             const active = activeTab === tab.id;
@@ -2147,6 +2482,7 @@ export default function NordicTenderFinder() {
               { href: "https://www.sell2wales.gov.wales",               label: "Sell2Wales", color: "#ff7070" },
               { href: "https://www.publiccontractsscotland.gov.uk",     label: "PCS", color: "#00c878" },
               { href: "https://gtr.ukri.org",                           label: "Innovate UK / GtR", color: "#ff8c00" },
+              { href: "https://ted.europa.eu",                          label: "TED (EU)", color: "#4da6ff" },
             ].map(({ href, label, color }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer"
                 style={{ display: "block", fontSize: "10px", color: `${color}99`, textDecoration: "none", padding: "3px 4px", marginBottom: "1px" }}>
@@ -2163,6 +2499,7 @@ export default function NordicTenderFinder() {
           {activeTab === "competitors" && <CompetitorTab tenders={tenders} />}
           {activeTab === "market"      && <MarketTab />}
           {activeTab === "ukri"        && <UKRITab />}
+          {activeTab === "ted"         && <TEDTab />}
           {activeTab === "shortlist"   && (
             <ShortlistTab
               entries={shortlistEntries}
