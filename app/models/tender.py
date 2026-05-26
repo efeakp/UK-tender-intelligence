@@ -9,6 +9,7 @@ class TenderSource(str, Enum):
     CONTRACTS_FINDER          = "Contracts Finder"
     SELL2WALES                = "Sell2Wales"
     PUBLIC_CONTRACTS_SCOTLAND = "Public Contracts Scotland"
+    INNOVATE_UK               = "Innovate UK"
 
 
 class ScopeTag(str, Enum):

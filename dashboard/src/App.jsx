@@ -224,7 +224,8 @@ function SourceBadge({ source }) {
     "Find a Tender":             { bg: "rgba(138,99,210,0.2)",  border: "rgba(138,99,210,0.4)",  color: "#b48ef5", label: "FaT" },
     "Contracts Finder":          { bg: "rgba(30,144,255,0.2)",  border: "rgba(30,144,255,0.4)",  color: "#5babff", label: "CF"  },
     "Sell2Wales":                { bg: "rgba(220,50,50,0.2)",   border: "rgba(220,50,50,0.4)",   color: "#ff7070", label: "S2W" },
-    "Public Contracts Scotland": { bg: "rgba(0,180,120,0.2)",   border: "rgba(0,180,120,0.4)",   color: "#00c878", label: "PCS" },
+    "Public Contracts Scotland": { bg: "rgba(0,180,120,0.2)",   border: "rgba(0,180,120,0.4)",   color: "#00c878", label: "PCS"  },
+    "Innovate UK":               { bg: "rgba(255,140,0,0.2)",   border: "rgba(255,140,0,0.4)",   color: "#ff8c00", label: "IUK"  },
   };
   const c = cfg[source] || { bg: "rgba(255,255,255,0.1)", border: "rgba(255,255,255,0.2)", color: "#ccc", label: source };
   return (
@@ -1192,6 +1193,308 @@ function MarketTab() {
   );
 }
 
+// ─── UKRI / Innovate UK Tab ───────────────────────────────────────────────────
+
+function UKRIProjectCard({ project, selected, onClick }) {
+  const isActive = (project.ukri_status || "").toLowerCase() === "active";
+  const sl = scoreLabel(project.score || 0);
+  return (
+    <div onClick={onClick} style={{
+      padding: "14px 16px", borderRadius: "10px", cursor: "pointer", marginBottom: "8px",
+      background: selected ? "rgba(255,140,0,0.08)" : "rgba(255,255,255,0.03)",
+      border: `1px solid ${selected ? "rgba(255,140,0,0.35)" : "rgba(255,255,255,0.06)"}`,
+      transition: "all 0.15s",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "#f0ede8", marginBottom: "4px", lineHeight: 1.35 }}>{project.title}</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.45)", marginBottom: "6px" }}>{project.authority}</div>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", fontWeight: 700,
+              background: isActive ? "rgba(0,229,160,0.12)" : "rgba(255,255,255,0.06)",
+              border: `1px solid ${isActive ? "rgba(0,229,160,0.3)" : "rgba(255,255,255,0.1)"}`,
+              color: isActive ? "#00e5a0" : "rgba(255,255,255,0.35)",
+            }}>{project.ukri_status || "Unknown"}</span>
+            {project.grant_category && (
+              <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.25)", color: "#ff8c00", fontWeight: 600 }}>
+                {project.grant_category}
+              </span>
+            )}
+            <SourceBadge source="Innovate UK" />
+          </div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: "12px", color: "#f5c842", fontWeight: 600, marginBottom: "3px" }}>{project.value || "—"}</div>
+          <div style={{ fontSize: "11px", fontWeight: 700, color: sl.color }}>{project.score || 0}/10</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UKRIDetailPanel({ project, onClose }) {
+  if (!project) return null;
+  const isActive = (project.ukri_status || "").toLowerCase() === "active";
+  const sl = scoreLabel(project.score || 0);
+  const scopes = project.matched_scopes || [];
+  const keywords = project.matched_keywords || [];
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "12px", border: "1px solid rgba(255,140,0,0.2)", padding: "20px", position: "sticky", top: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "14px" }}>
+        <div style={{ fontSize: "10px", color: "#ff8c00", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Innovate UK Project</div>
+        <button onClick={onClose} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: "16px", padding: "0 2px" }}>✕</button>
+      </div>
+      <div style={{ fontSize: "14px", fontWeight: 600, color: "#f0ede8", marginBottom: "8px", lineHeight: 1.4 }}>{project.title}</div>
+      <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.55)", marginBottom: "14px" }}>{project.authority}</div>
+
+      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "14px" }}>
+        <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", fontWeight: 700,
+          background: isActive ? "rgba(0,229,160,0.12)" : "rgba(255,255,255,0.06)",
+          border: `1px solid ${isActive ? "rgba(0,229,160,0.3)" : "rgba(255,255,255,0.1)"}`,
+          color: isActive ? "#00e5a0" : "rgba(255,255,255,0.35)",
+        }}>{project.ukri_status || "Unknown"}</span>
+        {project.grant_category && (
+          <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.25)", color: "#ff8c00", fontWeight: 600 }}>{project.grant_category}</span>
+        )}
+        <span style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", background: `${sl.color}18`, border: `1px solid ${sl.color}44`, color: sl.color, fontWeight: 700 }}>{project.score || 0}/10 — {sl.label}</span>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "14px" }}>
+        {[
+          { label: "Value", value: project.value || "—" },
+          { label: "Funder", value: project.funder || "Innovate UK" },
+          { label: "Start", value: formatDate(project.published) },
+          { label: "End",   value: formatDate(project.deadline)  },
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "2px" }}>{label}</div>
+            <div style={{ fontSize: "12px", color: "rgba(255,255,255,0.75)" }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      {project.description && (
+        <div style={{ marginBottom: "14px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "5px" }}>Abstract</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", lineHeight: 1.55, maxHeight: "120px", overflowY: "auto" }}>{project.description}</div>
+        </div>
+      )}
+
+      {scopes.length > 0 && (
+        <div style={{ marginBottom: "12px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Service Relevance</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {scopes.map(s => <ScopeTag key={s} scope={s} />)}
+          </div>
+        </div>
+      )}
+
+      {keywords.length > 0 && (
+        <div style={{ marginBottom: "14px" }}>
+          <div style={{ fontSize: "9px", color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "6px" }}>Matched Keywords</div>
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {keywords.map(kw => (
+              <span key={kw} style={{ fontSize: "10px", padding: "2px 7px", borderRadius: "4px", background: "rgba(0,229,160,0.08)", border: "1px solid rgba(0,229,160,0.2)", color: "#00e5a0" }}>{kw}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <a href={project.url} target="_blank" rel="noopener noreferrer"
+        style={{ display: "block", textAlign: "center", padding: "9px 16px", borderRadius: "7px", background: "rgba(255,140,0,0.1)", border: "1px solid rgba(255,140,0,0.3)", color: "#ff8c00", fontSize: "12px", fontWeight: 600, textDecoration: "none", letterSpacing: "0.04em" }}>
+        View on GtR ↗
+      </a>
+    </div>
+  );
+}
+
+function UKRITab() {
+  const [status,     setStatus]     = useState(null);
+  const [projects,   setProjects]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error,      setError]      = useState(null);
+  const [selected,   setSelected]   = useState(null);
+  const [search,     setSearch]     = useState("");
+  const [scopeFilter,setScopeFilter]= useState("All");
+  const [statusFilter,setStatusFilter] = useState("All");
+
+  const loadProjects = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/ukri/projects?page_size=500&sort_by=score&sort_dir=desc`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setProjects(data.projects ?? []);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const checkStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/ukri/status`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setStatus(data);
+      if (data.populated) await loadProjects();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerRefresh = async () => {
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/ukri/refresh`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setStatus({ populated: true, project_count: data.projects_found });
+      await loadProjects();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => { checkStatus(); }, []);
+
+  const SCOPES = [
+    "Service 01: Renewable Energy Opportunity Identification",
+    "Service 02: Energy Feasibility Studies",
+    "Service 03: Energy System Optimisation",
+    "Service 04: Business Case Development",
+  ];
+
+  const filtered = projects.filter(p => {
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      if (!((p.title || "").toLowerCase().includes(q) || (p.authority || "").toLowerCase().includes(q) || (p.description || "").toLowerCase().includes(q))) return false;
+    }
+    if (scopeFilter !== "All" && !(p.matched_scopes || []).includes(scopeFilter)) return false;
+    if (statusFilter !== "All" && (p.ukri_status || "").toLowerCase() !== statusFilter.toLowerCase()) return false;
+    return true;
+  });
+
+  const activeCount = projects.filter(p => (p.ukri_status || "").toLowerCase() === "active").length;
+  const totalValue  = projects.reduce((s, p) => s + (p.value_amount || 0), 0);
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px", color: "rgba(255,255,255,0.35)" }}>
+        <div style={{ width: "32px", height: "32px", border: "2px solid rgba(255,140,0,0.2)", borderTop: "2px solid #ff8c00", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+        <div style={{ fontSize: "13px" }}>Checking Innovate UK data…</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-up">
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "12px" }}>
+        <div>
+          <div style={{ fontSize: "14px", color: "#f0ede8", fontWeight: 600, marginBottom: "3px" }}>Innovate UK — Energy Research Projects</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
+            Gateway to Research (GtR v2) · 10 energy search terms · Innovate UK funded only
+          </div>
+        </div>
+        <button onClick={triggerRefresh} disabled={refreshing}
+          style={{ padding: "8px 16px", borderRadius: "7px", background: refreshing ? "rgba(255,255,255,0.04)" : "rgba(255,140,0,0.12)", border: `1px solid ${refreshing ? "rgba(255,255,255,0.1)" : "rgba(255,140,0,0.3)"}`, color: refreshing ? "rgba(255,255,255,0.3)" : "#ff8c00", fontSize: "12px", fontWeight: 600, cursor: refreshing ? "not-allowed" : "pointer", letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
+          {refreshing ? "⏳ Fetching (~60s)…" : status?.populated ? "↻ Refresh" : "Load Innovate UK Data"}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ marginBottom: "16px", padding: "12px 14px", borderRadius: "8px", background: "rgba(198,40,40,0.1)", border: "1px solid rgba(198,40,40,0.3)", fontSize: "12px", color: "#ef9a9a" }}>⚠ {error}</div>
+      )}
+
+      {refreshing && (
+        <div style={{ padding: "24px", borderRadius: "10px", background: "rgba(255,140,0,0.05)", border: "1px solid rgba(255,140,0,0.15)", textAlign: "center", marginBottom: "20px" }}>
+          <div style={{ width: "28px", height: "28px", border: "2px solid rgba(255,140,0,0.2)", borderTop: "2px solid #ff8c00", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+          <div style={{ fontSize: "13px", color: "#ff8c00", fontWeight: 600, marginBottom: "6px" }}>Fetching Innovate UK projects…</div>
+          <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.35)" }}>
+            Querying Gateway to Research across 10 energy search terms.<br />
+            This typically takes 30–60 seconds.
+          </div>
+        </div>
+      )}
+
+      {!status?.populated && !refreshing && (
+        <div style={{ textAlign: "center", padding: "60px 20px", color: "rgba(255,255,255,0.3)" }}>
+          <div style={{ fontSize: "36px", marginBottom: "12px" }}>💡</div>
+          <div style={{ fontSize: "14px", marginBottom: "8px", color: "rgba(255,255,255,0.45)" }}>No Innovate UK data loaded yet.</div>
+          <div style={{ fontSize: "12px" }}>Click "Load Innovate UK Data" to fetch energy research projects from Gateway to Research.</div>
+        </div>
+      )}
+
+      {status?.populated && !refreshing && projects.length > 0 && (<>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "20px" }}>
+          {[
+            { label: "Total Projects", value: projects.length,    color: "#ff8c00" },
+            { label: "Active",         value: activeCount,         color: "#00e5a0" },
+            { label: "Closed",         value: projects.length - activeCount, color: "rgba(255,255,255,0.35)" },
+            { label: "Total Value",    value: `£${(totalValue / 1e6).toFixed(1)}m`, color: "#f5c842", isText: true },
+          ].map(({ label, value, color, isText }) => (
+            <div key={label} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 16px" }}>
+              <div style={{ fontSize: "10px", color: "rgba(255,255,255,0.35)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>{label}</div>
+              <div style={{ fontSize: isText ? "18px" : "24px", fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
+          <input
+            value={search} onChange={e => setSearch(e.target.value)}
+            placeholder="Search projects…"
+            style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", width: "200px" }}
+          />
+          <select value={scopeFilter} onChange={e => setScopeFilter(e.target.value)}
+            style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", cursor: "pointer" }}>
+            <option value="All" style={{ background: "#1a2030" }}>All Scopes</option>
+            {SCOPES.map(s => <option key={s} value={s} style={{ background: "#1a2030" }}>{s.split(":")[0]}</option>)}
+          </select>
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            style={{ padding: "7px 10px", borderRadius: "7px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "12px", outline: "none", cursor: "pointer" }}>
+            <option value="All" style={{ background: "#1a2030" }}>All Statuses</option>
+            <option value="Active" style={{ background: "#1a2030" }}>Active</option>
+            <option value="Closed" style={{ background: "#1a2030" }}>Closed</option>
+          </select>
+          <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>{filtered.length} of {projects.length} projects</span>
+        </div>
+
+        {/* Project list + detail panel */}
+        <div style={{ display: "grid", gridTemplateColumns: selected ? "1fr 380px" : "1fr", gap: "20px", alignItems: "start" }}>
+          <div>
+            {filtered.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(255,255,255,0.3)", fontSize: "13px" }}>No projects match current filters.</div>
+            ) : filtered.map((p, i) => (
+              <div key={p.id} className="fade-up" style={{ animationDelay: `${Math.min(i, 20) * 0.02}s` }}>
+                <UKRIProjectCard
+                  project={p}
+                  selected={selected?.id === p.id}
+                  onClick={() => setSelected(selected?.id === p.id ? null : p)}
+                />
+              </div>
+            ))}
+          </div>
+          {selected && <UKRIDetailPanel project={selected} onClose={() => setSelected(null)} />}
+        </div>
+      </>)}
+    </div>
+  );
+}
+
 // ─── Inline Feedback Form ─────────────────────────────────────────────────────
 
 function InlineFeedbackForm({ entry, onSave }) {
@@ -1807,6 +2110,7 @@ export default function NordicTenderFinder() {
             { id: "tenders",     label: "Tenders",             icon: "⚡", count: tenders.length },
             { id: "competitors", label: "Competitor Activity", icon: "🏢", count: tenders.filter(t => t.competitor_win).length },
             { id: "market",      label: "Market Intelligence", icon: "📈", count: null },
+            { id: "ukri",        label: "Innovate UK",         icon: "💡", count: null },
             { id: "shortlist",   label: "Shortlist",           icon: "★",  count: shortlistEntries.length },
           ].map(tab => {
             const active = activeTab === tab.id;
@@ -1842,6 +2146,7 @@ export default function NordicTenderFinder() {
               { href: "https://www.contractsfinder.service.gov.uk",     label: "Contracts Finder", color: "#5babff" },
               { href: "https://www.sell2wales.gov.wales",               label: "Sell2Wales", color: "#ff7070" },
               { href: "https://www.publiccontractsscotland.gov.uk",     label: "PCS", color: "#00c878" },
+              { href: "https://gtr.ukri.org",                           label: "Innovate UK / GtR", color: "#ff8c00" },
             ].map(({ href, label, color }) => (
               <a key={label} href={href} target="_blank" rel="noopener noreferrer"
                 style={{ display: "block", fontSize: "10px", color: `${color}99`, textDecoration: "none", padding: "3px 4px", marginBottom: "1px" }}>
@@ -1857,6 +2162,7 @@ export default function NordicTenderFinder() {
 
           {activeTab === "competitors" && <CompetitorTab tenders={tenders} />}
           {activeTab === "market"      && <MarketTab />}
+          {activeTab === "ukri"        && <UKRITab />}
           {activeTab === "shortlist"   && (
             <ShortlistTab
               entries={shortlistEntries}
