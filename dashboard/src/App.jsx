@@ -1963,7 +1963,7 @@ const OUTCOME_CFG = {
   "withdrawn": { color: "#f5a142",               label: "Withdrawn" },
 };
 
-function ShortlistTab({ entries, liveTenders, onFeedbackSave, onRemove, onExportCsv }) {
+function ShortlistTab({ entries, liveTenders, onFeedbackSave, onRemove, onExportCsv, onReload }) {
   const [view,     setView]     = React.useState("list"); // "list" | "review"
   const [selected, setSelected] = React.useState(null);
   const [decFilter, setDecFilter] = React.useState("All");
@@ -1992,7 +1992,12 @@ function ShortlistTab({ entries, liveTenders, onFeedbackSave, onRemove, onExport
       <div className="fade-up" style={{ textAlign: "center", padding: "80px 20px", color: "rgba(255,255,255,0.3)" }}>
         <div style={{ fontSize: "40px", marginBottom: "14px" }}>★</div>
         <div style={{ fontSize: "15px", color: "rgba(255,255,255,0.45)", marginBottom: "8px" }}>No tenders shortlisted yet</div>
-        <div style={{ fontSize: "12px" }}>Click the ☆ star on any tender card or in the detail panel to add it to your shortlist.</div>
+        <div style={{ fontSize: "12px", marginBottom: "16px" }}>Click the ☆ star on any tender card or in the detail panel to add it to your shortlist.</div>
+        {onReload && (
+          <button onClick={onReload} style={{ padding: "7px 16px", borderRadius: "7px", fontSize: "12px", fontWeight: 600, cursor: "pointer", border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.5)" }}>
+            ↻ Reload shortlist
+          </button>
+        )}
       </div>
     );
   }
@@ -2236,7 +2241,9 @@ export default function NordicTenderFinder() {
     try {
       const data = await apiLoadShortlist();
       setShortlistEntries(Array.isArray(data) ? data : []);
-    } catch (_) { /* non-fatal */ }
+    } catch (err) {
+      console.error("loadShortlist failed:", err);
+    }
   }, []);
 
   const handleToggleShortlist = useCallback(async (tender) => {
@@ -2450,7 +2457,7 @@ export default function NordicTenderFinder() {
           ].map(tab => {
             const active = activeTab === tab.id;
             return (
-              <button key={tab.id} className="nav-btn" onClick={() => setActiveTab(tab.id)}
+              <button key={tab.id} className="nav-btn" onClick={() => { setActiveTab(tab.id); if (tab.id === "shortlist") loadShortlist(); }}
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   padding: "9px 12px", borderRadius: "8px", cursor: "pointer",
@@ -2507,6 +2514,7 @@ export default function NordicTenderFinder() {
               onFeedbackSave={handleFeedbackSave}
               onRemove={handleShortlistRemove}
               onExportCsv={handleShortlistExportCsv}
+              onReload={loadShortlist}
             />
           )}
 
