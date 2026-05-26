@@ -220,59 +220,58 @@ def _map_to_tender(notice: dict) -> Tender:
     )
 
 
+# Notice types to keep (all others discarded client-side)
+_KEEP_TYPES = frozenset({
+    "cn-standard", "cn-social", "cn-desg",       # contract notices (active tenders)
+    "pin-buyer", "pin-cfc-standard",              # prior information notices
+    "can-standard", "can-social", "can-desg",     # contract award notices
+})
+
 # ── Fetcher ───────────────────────────────────────────────────────────────────
 
 async def _search_page(
     client:     httpx.AsyncClient,
-    query:      str,
+    cpv:        str,
     page:       int,
-    page_size:  int = 250,
+    page_size:  int = 100,
 ) -> tuple[list[dict], int]:
-    """Return (notices, total_count) for one page."""
+    """
+    Fetch one page for a single CPV code.
+    Uses a simple query with no notice-type or date filters to avoid 400s;
+    filtering is done client-side after retrieval.
+    """
     body = {
-        "query":          query,
+        "query":          f"classification-cpv IN ({cpv})",
         "fields":         FIELDS,
         "limit":          page_size,
         "scope":          "ALL",
         "paginationMode": "PAGE_NUMBER",
         "page":           page,
+        "sortField":      "publication-date",
+        "sortOrder":      "DESC",
     }
     try:
         resp = await client.post(f"{TED_BASE}/notices/search", json=body)
         resp.raise_for_status()
         data = resp.json()
-        return data.get("notices", []), data.get("totalNoticeCount", 0)
+        notices = data.get("notices", [])
+        total   = data.get("totalNoticeCount", 0)
+        logger.debug("TED cpv=%s page=%d: %d notices (total=%d)", cpv, page, len(notices), total)
+        return notices, total
     except Exception as exc:
-        logger.warning("TED API error (page=%d): %s", page, exc)
+        logger.warning("TED API error (cpv=%s page=%d): %s", cpv, page, exc)
         return [], 0
 
 
 async def fetch_ted_notices() -> dict:
     """
     Query the TED API for energy-related EU notices, score them, and cache.
-    Fetches contract notices (CN) from the last 6 months and
-    award notices (CAN) from the last 12 months.
+    Queries each CPV code separately (one query per code) to avoid complex
+    query syntax that can trigger 400 errors. Client-side filtering retains
+    only relevant notice types and notices from the last 12 months.
     Returns the updated store dict.
     """
-    cutoff_cn  = (datetime.now(timezone.utc) - timedelta(days=180)).strftime("%Y-%m-%d")
-    cutoff_can = (datetime.now(timezone.utc) - timedelta(days=365)).strftime("%Y-%m-%d")
-
-    cpv_filter = ",".join(ENERGY_CPVS)
-
-    queries = [
-        # Active tenders and prior information notices (6 months)
-        (
-            f"classification-cpv IN ({cpv_filter})"
-            f" AND notice-type IN (cn-standard,cn-social,pin-buyer)"
-            f" AND publication-date >= {cutoff_cn}"
-        ),
-        # Awarded contracts (12 months — competitive intelligence)
-        (
-            f"classification-cpv IN ({cpv_filter})"
-            f" AND notice-type IN (can-standard,can-social)"
-            f" AND publication-date >= {cutoff_can}"
-        ),
-    ]
+    cutoff = datetime.now(timezone.utc) - timedelta(days=730)  # 2 years
 
     seen: set[str] = set()
     raw:  list[dict] = []
@@ -282,24 +281,42 @@ async def fetch_ted_notices() -> dict:
         timeout=httpx.Timeout(30.0),
         follow_redirects=True,
     ) as client:
-        for query in queries:
-            # Fetch up to 3 pages (750 notices max per query)
-            for page in range(1, 4):
-                notices, total = await _search_page(client, query, page)
+        for cpv in ENERGY_CPVS:
+            # Fetch up to 2 pages (200 notices) per CPV code
+            for page in range(1, 3):
+                notices, total = await _search_page(client, cpv, page)
                 if not notices:
                     break
                 for n in notices:
                     pub_num = n.get("publication-number")
                     if not pub_num or pub_num in seen:
                         continue
+                    # Client-side: filter to relevant notice types only
+                    notice_type = n.get("notice-type", "")
+                    if notice_type not in _KEEP_TYPES:
+                        continue
+                    # Client-side: filter to last 12 months
+                    pub_raw = n.get("publication-date", "")
+                    if pub_raw:
+                        try:
+                            pub_dt = datetime.fromisoformat(
+                                pub_raw.split("+")[0]
+                            ).replace(tzinfo=timezone.utc)
+                            if pub_dt < cutoff:
+                                continue
+                        except Exception:
+                            pass
                     seen.add(pub_num)
                     raw.append(n)
-                if len(notices) < 250 or page * 250 >= min(total, 750):
+                if not notices or len(notices) < 100:
                     break
-                await asyncio.sleep(0.5)
-            await asyncio.sleep(0.5)
+                await asyncio.sleep(0.4)
+            await asyncio.sleep(0.4)
 
-    logger.info("TED: %d unique energy notices retrieved", len(raw))
+    logger.info(
+        "TED: %d unique notices after type+date filter (seen=%d deduped keys)",
+        len(raw), len(seen),
+    )
 
     scored: list[dict] = []
     for n in raw:
