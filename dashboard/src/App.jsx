@@ -1158,7 +1158,7 @@ function MarketTab() {
         {/* Filters */}
         <div style={{ display: "flex", gap: "10px", marginBottom: "16px", flexWrap: "wrap", alignItems: "center" }}>
           {[
-            { label: "Source", value: sourceFilter, set: setSourceFilter, options: ["All", "Find a Tender", "Contracts Finder", "Sell2Wales", "Public Contracts Scotland"] },
+            { label: "Source", value: sourceFilter, set: setSourceFilter, options: ["All", ...[...new Set(awards.map(a => a.source))].sort()] },
             { label: "Scope",  value: scopeFilter,  set: setScopeFilter,  options: ["All", "Service 01: Renewable Energy Opportunity Identification", "Service 02: Energy Feasibility Studies", "Service 03: Energy System Optimisation", "Service 04: Business Case Development"] },
           ].map(({ label, value, set, options }) => (
             <select key={label} value={value} onChange={e => set(e.target.value)}
@@ -2528,7 +2528,7 @@ export default function NordicTenderFinder() {
                 style={{ flex: "1", minWidth: "180px", padding: "8px 13px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#f0ede8", fontSize: "13px", outline: "none" }} />
 
               {[
-                { label: "Source", value: sourceFilter, setValue: setSourceFilter, options: ["All", "Find a Tender", "Contracts Finder", "Sell2Wales", "Public Contracts Scotland"] },
+                { label: "Source", value: sourceFilter, setValue: setSourceFilter, options: ["All", ...Object.keys(sourceCounts).sort()] },
                 { label: "Scope",  value: scopeFilter,  setValue: setScopeFilter,  options: ["All", "Service 01: Renewable Energy Opportunity Identification", "Service 02: Energy Feasibility Studies", "Service 03: Energy System Optimisation", "Service 04: Business Case Development"] },
               ].map(({ label, value, setValue, options }) => (
                 <select key={label} value={value} onChange={e => setValue(e.target.value)}

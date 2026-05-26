@@ -22,6 +22,9 @@ CACHE_KEY_FAT_META         = "meta:find_a_tender"
 CACHE_KEY_CF_META          = "meta:contracts_finder"
 CACHE_KEY_S2W_META         = "s2w_meta"
 CACHE_KEY_PCS_META         = "pcs_meta"
+CACHE_KEY_PROACTIS_META    = "meta:proactis"
+CACHE_KEY_YORTENDER_META   = "meta:yortender"
+CACHE_KEY_INTEND_META      = "meta:intend"
 CACHE_KEY_LAST_REFRESHED   = "meta:last_refreshed"
 CACHE_KEY_MARKET_AWARDS    = "market:awards"    # CPV-matched awarded contracts (extended lookback)
 CACHE_KEY_MARKET_REFRESHED = "market:refreshed" # timestamp of last market data refresh
@@ -125,12 +128,15 @@ def get_last_refresh_time() -> Optional[datetime]:
 
 
 def update_all_source_meta(source_counts: dict, errors: list) -> None:
-    """Update SourceMeta for all four sources and record the refresh timestamp."""
+    """Update SourceMeta for all sources and record the refresh timestamp."""
     for key, label in [
-        (CACHE_KEY_FAT_META, "Find a Tender"),
-        (CACHE_KEY_CF_META,  "Contracts Finder"),
-        (CACHE_KEY_S2W_META, "Sell2Wales"),
-        (CACHE_KEY_PCS_META, "Public Contracts Scotland"),
+        (CACHE_KEY_FAT_META,      "Find a Tender"),
+        (CACHE_KEY_CF_META,       "Contracts Finder"),
+        (CACHE_KEY_S2W_META,      "Sell2Wales"),
+        (CACHE_KEY_PCS_META,      "Public Contracts Scotland"),
+        (CACHE_KEY_PROACTIS_META, "Proactis"),
+        (CACHE_KEY_YORTENDER_META,"Yortender"),
+        (CACHE_KEY_INTEND_META,   "In-Tend"),
     ]:
         set_source_meta(key, SourceMeta(
             last_fetched=datetime.now(timezone.utc),

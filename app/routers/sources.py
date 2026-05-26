@@ -12,6 +12,9 @@ from app.dependencies import (
     CACHE_KEY_CF_META,
     CACHE_KEY_S2W_META,
     CACHE_KEY_PCS_META,
+    CACHE_KEY_PROACTIS_META,
+    CACHE_KEY_YORTENDER_META,
+    CACHE_KEY_INTEND_META,
     get_source_meta,
 )
 from app.models.tender import SourcesResponse, SourceStatus
@@ -22,43 +25,29 @@ router = APIRouter(prefix="/sources", tags=["Sources"])
 
 @router.get("", response_model=SourcesResponse, summary="Source health and stats")
 async def get_sources():
-    fat_meta = get_source_meta(CACHE_KEY_FAT_META)
-    cf_meta  = get_source_meta(CACHE_KEY_CF_META)
-    s2w_meta = get_source_meta(CACHE_KEY_S2W_META)
-    pcs_meta = get_source_meta(CACHE_KEY_PCS_META)
-
     tenders = cache.get(CACHE_KEY_TENDERS) or []
+
+    _all_sources = [
+        ("Find a Tender",           CACHE_KEY_FAT_META),
+        ("Contracts Finder",        CACHE_KEY_CF_META),
+        ("Sell2Wales",              CACHE_KEY_S2W_META),
+        ("Public Contracts Scotland", CACHE_KEY_PCS_META),
+        ("Proactis",                CACHE_KEY_PROACTIS_META),
+        ("Yortender",               CACHE_KEY_YORTENDER_META),
+        ("In-Tend",                 CACHE_KEY_INTEND_META),
+    ]
 
     return SourcesResponse(
         sources=[
             SourceStatus(
-                name="Find a Tender",
-                healthy=fat_meta.healthy,
-                last_fetched=fat_meta.last_fetched,
-                tender_count=fat_meta.tender_count,
-                error=fat_meta.error,
-            ),
-            SourceStatus(
-                name="Contracts Finder",
-                healthy=cf_meta.healthy,
-                last_fetched=cf_meta.last_fetched,
-                tender_count=cf_meta.tender_count,
-                error=cf_meta.error,
-            ),
-            SourceStatus(
-                name="Sell2Wales",
-                healthy=s2w_meta.healthy,
-                last_fetched=s2w_meta.last_fetched,
-                tender_count=s2w_meta.tender_count,
-                error=s2w_meta.error,
-            ),
-            SourceStatus(
-                name="Public Contracts Scotland",
-                healthy=pcs_meta.healthy,
-                last_fetched=pcs_meta.last_fetched,
-                tender_count=pcs_meta.tender_count,
-                error=pcs_meta.error,
-            ),
+                name=name,
+                healthy=meta.healthy,
+                last_fetched=meta.last_fetched,
+                tender_count=meta.tender_count,
+                error=meta.error,
+            )
+            for name, key in _all_sources
+            for meta in [get_source_meta(key)]
         ],
         total_cached=len(tenders),
         cache_ttl_minutes=settings.cache_ttl_minutes,
