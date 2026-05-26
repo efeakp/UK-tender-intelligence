@@ -247,8 +247,6 @@ async def _search_page(
         "scope":          "ALL",
         "paginationMode": "PAGE_NUMBER",
         "page":           page,
-        "sortField":      "publication-date",
-        "sortOrder":      "DESC",
     }
     try:
         resp = await client.post(f"{TED_BASE}/notices/search", json=body)
@@ -282,8 +280,8 @@ async def fetch_ted_notices() -> dict:
         follow_redirects=True,
     ) as client:
         for cpv in ENERGY_CPVS:
-            # Fetch up to 2 pages (200 notices) per CPV code
-            for page in range(1, 3):
+            # Fetch up to 4 pages (400 notices) per CPV code
+            for page in range(1, 5):
                 notices, total = await _search_page(client, cpv, page)
                 if not notices:
                     break
