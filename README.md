@@ -19,7 +19,10 @@ UK-tender-intelligence/
 │   │   ├── sources.py            # /sources health + stats
 │   │   ├── refresh.py            # /refresh manual trigger
 │   │   ├── digest.py             # /digest Teams webhook
-│   │   └── export.py             # /export/csv download
+│   │   ├── export.py             # /export/csv download
+│   │   ├── summarise.py          # /tenders/{id}/summarise AI analysis
+│   │   ├── market.py             # /market market intelligence endpoints
+│   │   └── shortlist.py          # /shortlist bid shortlisting + feedback
 │   └── services/
 │       ├── aggregator.py         # Concurrent fetch, dedup, score, cache write
 │       ├── scorer.py             # Relevance scoring engine
@@ -29,6 +32,8 @@ UK-tender-intelligence/
 │       ├── sell2wales.py         # Sell2Wales OCDS client
 │       ├── public_contracts_scotland.py  # PCS OCDS client
 │       ├── framework_tagger.py   # Framework / procurement route tagger
+│       ├── competitor_tagger.py  # Competitor win detection
+│       ├── market_awards.py      # CPV-matched awarded contract fetcher
 │       ├── watchlist.py          # Watched authorities matcher
 │       └── scheduler.py          # APScheduler daily refresh job
 ├── dashboard/                    # React + Vite frontend
@@ -40,6 +45,7 @@ UK-tender-intelligence/
 │   ├── test_scorer.py
 │   ├── test_aggregator.py
 │   └── test_api.py
+├── shortlist_data.json           # Persisted shortlist + feedback (auto-created)
 ├── .env.example
 ├── requirements.txt
 └── README.md
@@ -109,6 +115,7 @@ The dashboard connects to `http://localhost:8000` by default (`API_BASE` constan
 | `GET` | `/tenders` | List tenders with filters, scoring, and pagination |
 | `GET` | `/tenders/{id}` | Single tender detail |
 | `GET` | `/tenders/{id}/record` | Full procurement lifecycle (all OCID-linked notices) — FaT only |
+| `POST` | `/tenders/{id}/summarise` | AI Go / No-go analysis via Ollama |
 | `POST` | `/tenders/fetch/{notice_id}` | Fetch a specific FaT notice by ID and inject into cache |
 | `POST` | `/tenders/fetch/s2w/{ocid}` | Fetch a specific Sell2Wales notice by OCID and inject into cache |
 
@@ -121,30 +128,44 @@ The dashboard connects to `http://localhost:8000` by default (`API_BASE` constan
 | `scope` | — | Filter by matched business scope label |
 | `category` | — | Filter by procurement stage (`Opportunity`, `Future Opportunity`, `Early Engagement`, `Awarded Contract`) |
 | `region` | — | Filter by NUTS delivery region prefix (e.g. `UKE` for Yorkshire, `UKD` for North West) |
+| `cpv` | — | Filter by CPV code prefix (e.g. `71314` matches all energy services codes) |
 | `min_score` | `5` | Minimum relevance score (0–10) |
 | `sort_by` | `score` | `score` \| `deadline` \| `published` \| `value` |
 | `sort_dir` | `desc` | `asc` \| `desc` |
 | `page` | `1` | Page number |
-| `page_size` | `25` | Results per page (max 2000) |
+| `page_size` | `25` | Results per page (max 10000) |
 
-### Sources & Health
+### Market Intelligence
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/market/status` | Check whether market award data has been loaded |
+| `POST` | `/market/refresh` | Fetch CPV-matched awarded contracts from all sources (2–5 min) |
+| `GET` | `/market/awards` | List CPV-matched awarded contracts with filters |
+
+The market refresh queries all four sources for awarded contracts matching Nordic Energy's CPV codes over the past 30 days (FaT), 6 months (CF), and 12 months (S2W, PCS). Results are tagged with competitor wins where the awarded supplier matches a tracked competitor.
+
+### Shortlist & Bid Feedback
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/shortlist` | List all shortlisted tenders with feedback |
+| `POST` | `/shortlist/{id}` | Add a tender to the shortlist |
+| `DELETE` | `/shortlist/{id}` | Remove a tender from the shortlist |
+| `PUT` | `/shortlist/{id}/feedback` | Update bid assessment feedback |
+| `GET` | `/shortlist/report` | Management review report with aggregated stats |
+| `GET` | `/shortlist/export/csv` | Download shortlist with all feedback as CSV |
+
+Shortlist data is persisted to `shortlist_data.json` in the project root and survives API restarts.
+
+### Sources, Health & Utilities
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/sources` | Per-source health, last fetch time, tender count |
 | `GET` | `/health` | API health check |
-
-### Refresh
-
-| Method | Path | Description |
-|--------|------|-------------|
 | `POST` | `/refresh` | Trigger async background refresh |
 | `POST` | `/refresh/sync` | Trigger synchronous refresh (blocks until complete) |
-
-### Digest & Export
-
-| Method | Path | Description |
-|--------|------|-------------|
 | `POST` | `/digest` | Send scored tenders to the configured Teams webhook |
 | `GET` | `/export/csv` | Download filtered tenders as CSV |
 
@@ -198,6 +219,26 @@ The default API filter (`min_score=5`) excludes weak matches. The Teams digest o
 
 ---
 
+## Competitor Tracking
+
+The following competitors are tracked across awarded contract data:
+
+| Competitor | Dashboard colour |
+|------------|-----------------|
+| Advanced Infrastructure | Blue |
+| City Science | Green |
+| Grid Edge | Orange |
+| Tibo Energy | Purple |
+| Centre for Sustainable Energy | Gold |
+| Element Energy | Red |
+| Regen | Teal |
+| Living Places | Salmon |
+| Vital Energi | Magenta |
+
+Competitor wins are detected by matching the `awarded_supplier` field against each competitor's name (case-insensitive substring). They appear as tagged entries in both the **Competitor Activity** tab and the **Market Intelligence** tab.
+
+---
+
 ## Environment Variables
 
 Copy `.env.example` to `.env` and adjust as needed:
@@ -230,26 +271,120 @@ Copy `.env.example` to `.env` and adjust as needed:
 
 ---
 
-## Dashboard Features
+## Dashboard
 
-- Live tender list with score, category, source, notice type, and deadline urgency indicators
-- Filter by source, business scope, procurement category, NUTS delivery region, and minimum score
-- Click any tender to open a detail panel with description, matched keywords, CPV codes, framework info, and lot count
-- **Procurement history** — for FaT tenders, expands the full notice family (UK1 → UK2 → UK3 → UK4 → UK6) in chronological order
-- **AI analysis** — Go / No-go assessment via local Ollama (requires Ollama running with a supported model)
-- Export filtered results to CSV
-- Manual refresh trigger
+The dashboard is a single-page React app (`dashboard/src/App.jsx`) with a fixed three-column shell — only the centre column scrolls.
+
+### Layout
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│ HEADER  Logo · Tenders N · Strong N · Likely N · Sources N · ...    │  ← always visible
+├─────────────────┬──────────────────────────────┬─────────────────────┤
+│  ⚡ Tenders     │                              │  Categories         │
+│  🏢 Competitor  │   Scrollable content         │  (or detail panel)  │
+│  📈 Market      │                              │                     │
+│  ★  Shortlist   │                              │                     │
+│                 │                              │                     │
+│  [source links] │                              │                     │
+└─────────────────┴──────────────────────────────┴─────────────────────┘
+```
+
+### Metrics header
+
+Seven live counters are always visible in the header regardless of which tab is active or how far the list has been scrolled:
+
+| Metric | Description |
+|--------|-------------|
+| Tenders | Total notices in cache |
+| Strong | Score ≥ 7 |
+| Likely | Score 4–6 |
+| Sources | Active data sources |
+| NE Eligible | Nordic Energy is registered on the framework |
+| Watchlist | Matches a watched authority |
+| Shortlisted | Tenders added to the shortlist |
+
+### Left navigation
+
+Four vertical tab buttons, each with a live count badge:
+
+| Tab | Content |
+|-----|---------|
+| ⚡ **Tenders** | Active opportunities with filters, scoring, and detail panel |
+| 🏢 **Competitor Activity** | Awarded contracts grouped by tracked competitor |
+| 📈 **Market Intelligence** | CPV-matched awarded contracts across all sources |
+| ★ **Shortlist** | Shortlisted tenders with bid assessment and management review |
+
+### Right panel (Tenders tab)
+
+Shows a vertical category filter (All / Opportunity / Future Opportunity / Early Engagement / Awarded Contract) and per-source counts when no tender is selected. Expands from 190 px to 400 px to show the full detail panel when a tender is selected, then collapses back on close.
+
+### Tenders tab
+
+- Filter bar: free-text search, source, scope, NUTS region, CPV code prefix, minimum score slider, and CSV export
+- Each tender card shows: source badge, category, notice type (UK1–UK6), procurement route, watchlist flag, service scope tags, title, authority, value, deadline (with urgency indicator), relevance score, and a ☆ shortlist button
+- **Detail panel** (right sidebar): full tender metadata, contact point, matched keywords, OCID procurement family, CPV codes, and procurement history timeline (FaT only)
+- **AI analysis**: on-demand Go / No-go assessment via local Ollama — summary, recommendation, confidence, key requirements, and fit assessment
+- **Bid Assessment**: appears in the detail panel once a tender is shortlisted (see Shortlist tab below)
+
+### Competitor Activity tab
+
+Lists awarded contracts where the winning supplier is a tracked competitor. Grouped and colour-coded by company name. Selecting a row opens a contact panel with the authority contact point for market engagement outreach.
+
+### Market Intelligence tab
+
+Shows CPV-matched awarded contracts fetched on demand from all four sources. Key capabilities:
+
+- Triggered manually via "Load Market Data" (typically 2–5 minutes)
+- Filters by source, scope, and competitor wins
+- Stats row: total awards, competitor wins, entries with contact info, total value
+- Competitor win chips showing win counts per company
+- Detail panel with full award information and contact point
+
+### Shortlist tab
+
+Tenders can be shortlisted by clicking ☆ on any tender card or in the detail panel. The shortlist tab has two views:
+
+**List view** — each shortlisted tender shows its bid decision, confidence, outcome, and a one-line team note. Clicking a row opens the detail panel with the bid assessment form inline. Tenders can be removed from the shortlist here.
+
+**Management Review** — a structured table across all shortlisted tenders for pipeline oversight:
+
+| KPI | Description |
+|-----|-------------|
+| Shortlisted | Total tenders under consideration |
+| Go Decisions | Count of `Go` bid decisions |
+| No-go | Count of `No-go` bid decisions |
+| Bids Submitted | Count of submitted bids |
+| AI Accuracy | Average AI score accuracy rating (1–5) across all assessments |
+
+The review table shows one row per tender with decision badge, confidence, outcome, and an inline-editable management notes cell. The "Export CSV" button downloads all shortlist entries with feedback columns for offline reporting.
+
+### Bid Assessment form
+
+Appears in the detail panel once a tender is shortlisted. Fields:
+
+| Field | Options |
+|-------|---------|
+| Bid Decision | Go · No-go · Under Review · Bid Submitted |
+| Confidence | High · Medium · Low |
+| Outcome | Pending · Won · Lost · Withdrawn |
+| AI Score Accuracy | 1–5 (1 = AI was wrong, 5 = spot-on) |
+| Team Notes | Free text — bid team observations, risks, resource notes |
+| Management Notes | Free text — strategic rationale, approval comments |
+
+All feedback is persisted server-side to `shortlist_data.json` and survives page reloads and API restarts. The AI Score Accuracy rating feeds a learning loop: ratings collected across all shortlisted tenders provide ground-truth data for auditing and tuning the relevance scorer in `app/services/scorer.py`.
 
 ---
 
 ## Production Deployment
 
-The API is stateless; the in-memory cache resets on restart.
+The API is stateless except for `shortlist_data.json`; the in-memory tender cache resets on restart.
 
 For production:
 
 1. **Persist cache** — replace `InMemoryCache` in `app/dependencies.py` with Redis
-2. **Run with Gunicorn** — `gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app`
-3. **Set CORS** — update `CORS_ORIGINS` to your deployed dashboard domain
-4. **FaT API key** — register at find-tender.service.gov.uk to get a key and set `FAT_API_KEY` for higher rate limits
-5. **Build the dashboard** — `cd dashboard && npm run build`, then serve `dist/` via a static host or the FastAPI `StaticFiles` mount
+2. **Persist shortlist** — move `shortlist_data.json` storage to a database or mounted volume
+3. **Run with Gunicorn** — `gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app`
+4. **Set CORS** — update `CORS_ORIGINS` to your deployed dashboard domain
+5. **FaT API key** — register at find-tender.service.gov.uk to get a key and set `FAT_API_KEY` for higher rate limits
+6. **Build the dashboard** — `cd dashboard && npm run build`, then serve `dist/` via a static host or the FastAPI `StaticFiles` mount
